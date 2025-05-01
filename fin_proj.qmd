@@ -22,6 +22,7 @@ library(haven)
 library(here)
 library(ipumsr)
 library(janitor)
+library(tictoc)
 
 ```
 
@@ -81,17 +82,18 @@ work_loss <- work_loss |>
 # Transform all categorical variables to factor
 ## Creating custom function
 make_factor <- function(variable) {
-  work_loss <- work_loss |>
+    
+  work_loss |>
     mutate(across(c(variable), as.factor))
   
 }
 
 ## Creating a list of all categorical variable names
 vars <- select(.data = work_loss, -nhispid, -age, -famsize, -famkidno, -famoldno, -hourswrk, -welfmo, -bmi, -bedayr, -wldayr, -bwgtgram, -famcare10xno)
-list <- data.frame(variable = (colnames(vars)))
+list <- (colnames(vars))
 
 ## Iterating the function over each categorical variable
-pmap(.l = list, .f = make_factor)
+work_loss <- make_factor(variable = list)
 
 ## Checking to see if variable type is correct (most variables should be <fct> type now)
 glimpse(work_loss)
