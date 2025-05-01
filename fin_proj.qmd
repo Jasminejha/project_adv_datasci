@@ -36,30 +36,22 @@ Loading the data:
 ddi <- read_ipums_ddi("data/nhis_00004.xml")
 full_data <- read_ipums_micro(ddi)
 
-# Only keeping in the observations that have a non-null value for work loss days (WLDAYR)
-work_loss <- full_data |>
-  filter(WLDAYR < 996)
-
 ```
 
 ## Cleaning data
 
 ```{r}
 # Cleaning Names
-work_loss <- work_loss |>
+full_data <- full_data |>
   clean_names()
 
-str(work_loss)
-
-work_loss <- as.data.frame(work_loss)
-
 # Selecting 104 variables
-s_work_loss <- work_loss |>
+work_loss <- full_data |>
   select(nhispid, age, sex, sexorien, marstleg, relate, famsize, nchild, nsibs, famkidno, famoldno, parenthere, racenew, hispeth, yrsinusg, usborn, citizen, regionbr, intervlang, educ, headstarev, headstarnow, empstat, occ, ind, hourswrk, secondjob, paidhour, paidsick, empstatwkyr, classwk2, jobsecincorp, workev, yearsonjob, mainlong, whynowk2, pooryn, incfam07on, earnings, welfmo, gotwelf, gotnewelf, gotssi, gotssiwhy, ssiapply, gotss, gotnonssdis, ssdiapply, gotdiv, gotint, gotothpen, gotwage, gotsemp, gotchsup, gotwic, wiceligible, wicflag, gotstampfam, stampmo, gotother, poverty, fsateless, fsbalanc, fshungry, fsnoteat, fsnoteatno, fsnotlast, fsrawscore, fsrunout, fsskip, fsskipno, fsstat, fsweight, ownership, lowrent, health, bmi, bedayr, hstatyr, wldayr, workvolhcset, workvolhcpat, nbhdtime, pregnantnow, pregflush, hystev, bwgtgram, dvint, docvis2w, homecare2w, phonemed, famcare10xno, mamnoflup, mamother, mamult, papev, papab3yr,psalest, psaly, psasugg, mortelig, mortstat, mortdody, mortucodld)
 
 
 # Recoding for NA values - there were no values to change
-s_work_loss <- s_work_loss |>
+work_loss <- work_loss |>
   mutate(famsize = case_when(
     famsize == 99 ~ 0,
     famsize == 98 ~ NA_real_,
@@ -67,24 +59,42 @@ s_work_loss <- s_work_loss |>
   ))
 
 # Recoding for NA values 
-s_work_loss <- s_work_loss |>
+work_loss <- work_loss |>
   mutate(across(c(famkidno, famoldno, hourswrk, welfmo), ~ifelse(. == 98, NA, .)))
 
-s_work_loss <- s_work_loss |>
+work_loss <- work_loss |>
   mutate(across(c(hourswrk, welfmo), ~ifelse(. %in% c(97, 99), NA, .)))
 
-s_work_loss <- s_work_loss |>
+work_loss <- work_loss |>
   mutate(across(c(bedayr, wldayr), ~ifelse(. %in% c(997, 998, 999), NA, .)))
 
-s_work_loss <- s_work_loss |>
+work_loss <- work_loss |>
   mutate(bedayr = ifelse(bedayr == 996, 0, bedayr),
          wldayr = ifelse(wldayr == 996, 0, wldayr))
 
-s_work_loss <- s_work_loss |>
+work_loss <- work_loss |>
   mutate(bwgtgram = ifelse(bwgtgram %in% c(9997, 9998, 9999), NA, bwgtgram))
 
-s_work_loss <- s_work_loss |>
+work_loss <- work_loss |>
   mutate(famcare10xno = ifelse(famcare10xno == 9, NA, famcare10xno))
+
+# Transform all categorical variables to factor
+## Creating custom function
+make_factor <- function(variable) {
+  work_loss <- work_loss |>
+    mutate(across(c(variable), as.factor))
+  
+}
+
+## Creating a list of all categorical variable names
+vars <- select(.data = work_loss, -nhispid, -age, -famsize, -famkidno, -famoldno, -hourswrk, -welfmo, -bmi, -bedayr, -wldayr, -bwgtgram, -famcare10xno)
+list <- data.frame(variable = (colnames(vars)))
+
+## Iterating the function over each categorical variable
+pmap(.l = list, .f = make_factor)
+
+## Checking to see if variable type is correct (most variables should be <fct> type now)
+glimpse(work_loss)
   
 ```
 
