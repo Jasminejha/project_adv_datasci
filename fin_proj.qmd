@@ -124,8 +124,6 @@ glimpse(work_loss)
 
 ### 3.2 Microsimulation
 
-### 3.3 Simulation
-
 ## 4. Conclusion
 
 ## 5. References
