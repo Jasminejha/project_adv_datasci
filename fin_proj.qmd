@@ -471,7 +471,7 @@ model_final_fit |>
 General things to include in the conclusion:
 - Implications for policymakers when deciding which predictive model to implement
 
-- 
+- Implications for policymakers when deciding which version of the policy to implement (cost, efficiency vs. equity, etc.)
 
 Things we would like to do in the future if more time/processing power:
 
