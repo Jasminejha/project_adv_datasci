@@ -1,5 +1,5 @@
 ---
-title: "Designing a Tax Credit Policy for Work-Loss Days: A Predictive Modeling and
+title: "Designing a Tax Credit Policy for Work-Loss Days: A Predictive Modeling and Microsimulation Approach"
 subtitle: "PPOL 6819 | Advanced Data Science | Final Project"
 authors: "Jasmine Jha, Stephanie Jamilla, Maleeha Hameed"
 format: html
@@ -10,8 +10,6 @@ editor_options:
 ---
 
 ## Preliminaries
-
-Loading packages:
 
 ```{r}
 
@@ -26,7 +24,25 @@ library(tictoc)
 
 ```
 
-Loading the data:
+## Executive Summary
+
+## 1. Background
+
+### 1.1 Problem Statement
+
+### 1.2 Policy Solution
+
+### 1.3 Research Question
+
+## 2. Empirical Methodology
+
+### 2.1 Data 
+
+#### Data Description
+
+We used the 2018 dataset from the National Health Interview Survey, available on the IPUMS website. This dataset includes 72,831 observations and 1,503 variables. We selected the 2018 dataset because it offers a relatively large number of observations alongside a wide range of variables.
+
+The 1503 variables pertained to household and individual level information on demographic characteristics, socioeconomic status, general health status, mortality, specific diseases, health conditions, health behaviours, health education, medical care and access, health insurance, mental health, vaccinations history, alternative health, and social determinants of health.
 
 ```{r}
 
@@ -36,12 +52,14 @@ Loading the data:
 
 ddi <- read_ipums_ddi("data/nhis_00004.xml")
 full_data <- read_ipums_micro(ddi)
-
 ```
 
-## Cleaning data
+#### Data Preprocessing
+
+Our final analytic dataset consists of 72,752 observations and 104 variables. We applied several preprocessing steps to ensure the data was clean, interpretable, and ready for analysis and modeling.
 
 ```{r}
+
 # Cleaning Names
 full_data <- full_data |>
   clean_names()
@@ -97,33 +115,265 @@ work_loss <- make_factor(variable = list)
 
 ## Checking to see if variable type is correct (most variables should be <fct> type now)
 glimpse(work_loss)
-  
 ```
 
-## Executive Summary
+1.  **Standardization of variable names:** We standardized all variable names to ensure consistency and facilitate downstream processing. This involved converting all names to lowercase and replacing spaces and special characters with underscores. These modifications improved both readability and compatibility with data manipulation functions.
 
-## 1. Background
+2.  **Variable selection:** We manually reviewed and filtered the original set of 1,503 variables, reducing it to a focused subset of 104 variables. This selection excluded any variables with imputations, flags, or duplicate variants (e.g., summary or imputed versions of the same item). The final dataset includes variables from the following domains:
 
-### 1.1 Problem Statement
+    -   **Demographics**: age, sex, marital status
+    -   **Family composition**: household size, number of children, number of older adults
+    -   **Employment and income**: job type, hours worked, earnings, welfare receipt
+    -   **Health**: body mass index (BMI), days in bed due to illness, caregiving frequency
 
-### 1.2 Policy Solution
+    This streamlined selection was guided by theory and relevance to the research question.
 
-### 1.3 Research Question
+3.  **Recoding special and missing values:** We cleaned the data by identifying and recoding special response codes that represented missing or invalid data. For example, values such as 98, 99, and 997–999 were treated as missing, while specific codes like 996 (indicating "none" or "zero") were recoded to 0. This step ensured that all numeric fields reflected interpretable and analyzable values. Additionally, this step ensured numerical consistency and prevented skewed analysis due to placeholder codes.
 
-## 2. Empirical Methodology
+4.  **Conversion of categorical variables:** We converted all applicable non-numeric variables to categorical format to support appropriate statistical analysis and visualization. This included responses related to employment status, education, language, and benefit receipt. This step was essential for accurate modeling and visualization, particularly for tree-based and regularized regression models.
 
-### 2.1 Data
+5.  **Identification of the outcome variable:** Our primary outcome variable is **`wldayr`**, representing the number of work-loss days in the past 12 months.
 
 ### 2.2 Approaches
 
+We use two complementary machine learning approaches to explore the policy question at hand: predictive modeling and microsimulation.
+
+#### Predictive Modeling 
+
+The first part of the project focuses on developing two predictive models to estimate the number of work-loss days an individual may experience, using features such as demographics, health history, insurance coverage, and other socioeconomic factors. These models aim to help policymakers understand how illness and injury impact labor force participation, thereby informing the design of targeted policy interventions.
+
+We employ two modeling techniques—random forests (a tree-based ensemble method) and elastic net regression (a regularized linear model that balances L1 and L2 penalties). These methods were chosen for their complementary strengths: random forests are capable of capturing nonlinear interactions and complex variable relationships, while elastic net regression offers interpretability and variable selection in high-dimensional settings. We compare their performance to identify the most effective and interpretable model for informing policy design. Additional methodological details are provided in Section 3.1.
+
+#### Microsimulation 
+
+The second part of the project involves the creation of a microsimulation using a built-in microsimulation calculator to implement a proposed tax credit or cash transfer policy.
+
+We begin by defining the policy parameters, including how the tax credit amount is determined based on the number of work-loss days, household income, number of children, and other relevant factors. The microsimulation allows us to estimate the impact of the policy at the individual and household level, simulating outcomes under different eligibility rules and benefit structures.
+
+In the third step, we systematically vary key parameters of the policy to assess the distributional effects of these changes. This sensitivity analysis helps identify equity concerns and possible unintended consequences such as employers reducing paid sick leave offerings in response to the new government provision. To contextualize these concerns, we draw on existing literature from the U.S. and other countries regarding employer responses to publicly funded sick leave programs.
+
 ### 2.3 Limitations
+
+-   **Arbitrary variable selection:** We reduced the raw dataset to 104 variables based on a combination of intuition and theoretical considerations, excluding variables that were repetitive, imputed, or had excessive missing values. While a more principled, data-driven variable selection approach may have enhanced the predictive performance and accuracy of our microsimulation models, the full set of 1,503 variables was too unwieldy for the methods employed in this project.
+
+-   **Limited number of predictive models:** Although we would have preferred to explore a broader set of predictive models, such as XGBoost or Generalized Additive Models (GAMs), and experiment with hyperparameter tuning, computational constraints limited our ability to do so. These models, while potentially more powerful, were too resource-intensive given our available infrastructure.
+
+-   **Lack of geographical data:** Incorporating geographic data would have enabled us to distinguish between state and federal policy effects in our microsimulation calculator, providing a more nuanced understanding of policy implementation. Unfortunately, the absence of such data restricted our ability to analyze these geographic variations.
 
 ## 3. Implementation
 
 ### 3.1 Predictive Modelling
 
+#### 3.1.1 Setup
+
+##### Split data into testing and training data
+
+```{r}
+
+# Split the dataset
+set.seed(2025)
+
+work_loss_split <- initial_split(work_loss, prop = 0.8)
+
+work_loss_train <- training(x = work_loss_split)
+work_loss_test  <- testing(x = work_loss_split)
+```
+
+##### Set up resampling for model selection
+
+```{r}
+
+# Set crossvalidation
+work_loss_folds <- vfold_cv(data = work_loss_train, v = 10)
+```
+
+#### 3.1.2 Create Candidate Model: Predictive Model A 
+
+\[STEPHANIE ADD HERE\]
+
+#### 3.1.3 Create Candidate Mode: Elastic Net Regression
+
+This model uses regularization, which is a powerful technique for parametric regression models. Regularization, or penalization, allows linear regression to work with very wide data, to generate stable estimates for data with multicollinearity, and to perform feature selection.
+
+Elastic net regression combines ridge regression and LASSO regression. It has two hyperparameters, λ1 and λ2. Sometimes the hyperparameters are λ and mixture, which determines how much of λ to apply to each penalty (i.e. mixture = 0 is ridge regression and mixture = 1 is LASSO regression).
+
+We used this model as:
+
+-   It can work with datasets with a large number of variables
+
+-   It can generate stabel esitmates for data with multicollinearity
+
+-   It can perform feature selection, but in a less dramatic fashion than LASSO regression
+
+Elastic net regression requires all variables to be centered and scaled (standardized) before estimation. This way, the coefficients are interpreted in standardized units. To meet this criteria, we created a recipe that removed an ID variables, removed correlated numerical predictors, imputed the mean for any numerical predictors with missing values, hot coded binary variables for categorical ones, removed any predictors with zero variance or near-zero variance. Additionally, we removed missing observations in the outcome variable.
+
+```{r}
+
+# Create recipe
+enet_rec <- recipe(wldayr ~ ., data = work_loss_train) |>
+  update_role(c(nhispid), new_role = "ID") |>
+  step_rm(has_role("ID")) |>
+  step_dummy(all_factor_predictors()) |>
+  step_zv(all_predictors()) |>
+  step_nzv(all_predictors()) |>
+  step_corr(all_numeric_predictors()) |>
+  step_impute_mean(all_numeric_predictors()) |>
+  step_naomit(all_outcomes()) 
+
+# Create model
+enet_mod <- linear_reg(penalty = tune(), mixture = tune()) |>
+  set_mode(mode = "regression") |>
+  set_engine(engine = "glmnet")  
+
+# Create workflow
+enet_wf <- workflow() |>
+  add_recipe(recipe = enet_rec) |>
+  add_model(spec = enet_mod)
+
+# Create grid
+enet_grid <- grid_regular(
+  penalty(), 
+  mixture(),
+  levels = 20
+)
+
+# Tune grid
+enet_tuning <- tune_grid( 
+  enet_wf,
+  resamples = work_loss_folds, 
+  grid = enet_grid
+)
+
+# Identify best tuning results
+show_best(enet_tuning)
+```
+
+```{r}
+
+# Visualize tuning results
+autoplot(enet_tuning)
+```
+
+The RMSE calculated is 8.17. This shows that regularization does not help much in this case. This makes sense because the regression specification is parsimonious and deliberate.
+
+```{r}
+
+# Finalize workflow
+enet_tuned_wf <-
+  enet_wf |>
+  tune::finalize_workflow(tune::select_best(x = enet_tuning, metric = "rmse"))
+
+# Fit final workflow
+enet_resamples <- enet_tuned_wf |>
+  fit_resamples(resamples = work_loss_folds) 
+
+# Collect metrics
+enet_resamples |>
+  collect_metrics()
+```
+
+```{r}
+
+enet_rmse_plot <- collect_metrics(
+  enet_resamples, 
+  summarize = FALSE) |>
+  filter(.metric == "rmse") |>
+  ggplot(mapping = aes(x = id, y = .estimate, group = .metric)) +
+  geom_point() +
+  geom_line() +
+  theme_void() +
+  labs(
+    title = "RMSE of Elastic Net Regression Model Fits Across Folds") +
+  xlab("Fold") +
+  ylab("RMSE")
+
+enet_rmse_plot
+```
+
+#### 3.1.4 Model Comparison
+
+\[STEPHANIE UPDATE THE CODE BELOW\]
+
+```{r}
+
+# Compile results from both models
+
+bind_rows(
+  "Random forest" = collect_metrics(lm1_resamples) |> filter(.metric == "rmse"), # Stephanie update the resampled df
+  "Elastic net regression" = collect_metrics(enet_resamples) |> filter(.metric == "rmse"),
+  .id = "model"
+)
+```
+
+```{r}
+
+# Select the best resamples via select_best
+model_best <- x_resamples |>                    #Stephanie update
+  select_best(metric = "rmse")
+
+# Finalize the workflow with finalize_workflow
+model_final <- finalize_workflow(
+  x_workflow,                                   #Stephanie update
+  parameters = model_best
+)
+
+# Fit the model on all the data
+model_final_fit <- 
+  model_final |>
+  last_fit(work_loss_split) 
+
+# Collect metrics for RMSE
+kable(model_final_fit |>
+  collect_metrics() |>
+  filter(.metric == "rmse"))
+```
+
+```{r}
+
+# Make predictions with the testing data
+model_predictions <- bind_cols(
+  work_loss_test,
+  predict(object = extract_workflow(model_final_fit), 
+          new_data = work_loss_test) 
+)
+
+# Display the first 10 predictions against the actual values
+kable(select(model_predictions, wldayr, starts_with(".pred")))
+```
+
+```{r}
+
+# Interrogate which values were incorrectly predicted to the nearest tenth
+
+kable(model_predictions |>
+  select(wldayr, .pred) |>
+  mutate(.pred = round(model_predictions$.pred, 1),
+         wldayr = round(model_predictions$wldayr, 1),
+         correct = if_else(.pred == wldayr, "Yes", "No"
+         )) |>
+  count(correct))
+```
+
+#### 3.1.5 Variable Importance 
+
+```{r}
+
+model_final_fit |>
+  extract_fit_parsnip() |>
+  vip(num_features = 20) +
+  labs(title = "Top Predictors in Best Performing Model") +
+  ylab("Importance") +
+  xlab("Variable")
+```
+
 ### 3.2 Microsimulation
+
+\[JASMINE ADD HERE\]
 
 ## 4. Conclusion
 
+STEPHANIE ADD BULLETS HERE - MALEEHA WRITE LATER\]
+
 ## 5. References
+
+\[STEPHANIE ADD HERE\]
