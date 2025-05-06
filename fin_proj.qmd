@@ -705,6 +705,61 @@ The graph above, compares the distribution of reimbursement under the counter-fa
 
 Under the adjusted policy model the curve (blue) is slightly leftward shifted as compared to the counter-factual (red). This reflects the lower reimbursement amounts overall. Although lower income group still receive a higher reimbursement, it is comparatively lower in adjusted policy model. This is due to eligibility and lower number of weeks being reimbursed. The adjusted policy model achieves greater targeting of benefits towards lower-income individuals while reducing the total government expenditure.
 
+```{r}
+# Comibing distributional analysis
+
+adjusted_data1 <- simulated_data_custom_rate |>
+  filter(income %in% c(11,12,22,23,24)) |>
+  group_by(income) |>
+  summarise(mean_reimbursement = mean(reimbursement)) |>
+  mutate(
+    income = case_when(
+      income == 11 ~ "$0 - $34,999",
+      income == 12 ~ "$35,000 - $49,999",
+      income == 22 ~ "$50,000 - $74,999",
+      income == 23 ~ "$75,000 - $99,999",
+      income == 24 ~ "$100,000 and over"
+    ),
+    model = "Adjusted Policy"
+  )
+
+
+counterfactual_data1 <- simulated_data_cf |>
+  filter(income %in% c(11,12,22,23,24)) |>
+  group_by(income) |>
+  summarise(mean_reimbursement = mean(reimbursement)) |>
+  mutate(
+    income = case_when(
+      income == 11 ~ "$0 - $34,999",
+      income == 12 ~ "$35,000 - $49,999",
+      income == 22 ~ "$50,000 - $74,999",
+      income == 23 ~ "$75,000 - $99,999",
+      income == 24 ~ "$100,000 and over"
+    ),
+    model = "Counterfactual"
+  )
+
+
+comparison_data1 <- bind_rows(adjusted_data1, counterfactual_data1)
+
+
+comparison_data1 <- comparison_data1 |>
+  mutate(income = factor(income, levels = c("$0 - $34,999", "$35,000 - $49,999", "$50,000 - $74,999", "$75,000 - $99,999", "$100,000 and over")))
+
+
+ggplot(comparison_data1, aes(x = income, y = mean_reimbursement, fill = model)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Average Reimbursement Per Income Level",
+    x = "Income Level",
+    y = "Mean Reimbursement",
+    fill = "Model"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
 ## 5. Conclusion
 
 This study has important implications for policymakers in their decision-making process regarding predictive model selection and policy implementation. Policymakers must weigh factors such as the computational power and interpretability of different predictive models. For example, selecting a more sophisticated model may provide greater accuracy, but it could be more computationally intensive, requiring trade-offs between resource allocation and predictive precision.
