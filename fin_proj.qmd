@@ -22,7 +22,7 @@ library(here)
 library(ipumsr)
 library(janitor)
 library(tictoc)
-
+library(srvyr)
 ```
 
 ## Executive Summary
@@ -35,7 +35,7 @@ The United States is the only country in the OECD, and one of only six countries
 
 ### 1.2 Policy Solution
 
-This project proposes implementing a federal policy that mandates paid family leave, focusing on paid personal medical leave. The policy is based on current state policies–for example, states typically require that employees be granted up to 13 weeks of personal medical leave and have a maximum weekly benefit based on statewide average weekly wages. We create a baseline policy, then make adjustments to the dollar amount eligible employees receive or other components of the policy that determine the total amount transferred to individuals.
+This project proposes implementing a federal policy that mandates paid family leave, focusing on paid personal medical leave. The policy is based on current state policies--for example, states typically require that employees be granted up to 13 weeks of personal medical leave and have a maximum weekly benefit based on statewide average weekly wages. We create a baseline policy, then make adjustments to the dollar amount eligible employees receive or other components of the policy that determine the total amount transferred to individuals.
 
 A primary concern about family leave policies is that they would adversely affect business productivity or profit as employees would take longer time off. However, a handful of studies on the effects of the policy in California and New York demonstrate that the policy has actually had a positive effect on employee productivity and no significant impact on employee performance.[@bartel2023][@bartel2023a]
 
@@ -120,6 +120,7 @@ work_loss <- make_factor(variable = list)
 
 ## Checking to see if variable type is correct (most variables should be <fct> type now)
 glimpse(work_loss)
+
 ```
 
 1.  **Standardization of variable names:** We standardized all variable names to ensure consistency and facilitate downstream processing. This involved converting all names to lowercase and replacing spaces and special characters with underscores. These modifications improved both readability and compatibility with data manipulation functions.
@@ -133,7 +134,7 @@ glimpse(work_loss)
 
     This streamlined selection was guided by theory and relevance to the research question.
 
-3.  **Recoding special and missing values:** We cleaned the data by identifying and recoding special response codes that represented missing or invalid data. For example, values such as 98, 99, and 997–999 were treated as missing, while specific codes like 996 (indicating "none" or "zero") were recoded to 0. This step ensured that all numeric fields reflected interpretable and analyzable values. Additionally, this step ensured numerical consistency and prevented skewed analysis due to placeholder codes.
+3.  **Recoding special and missing values:** We cleaned the data by identifying and recoding special response codes that represented missing or invalid data. For example, values such as 98, 99, and 997--999 were treated as missing, while specific codes like 996 (indicating "none" or "zero") were recoded to 0. This step ensured that all numeric fields reflected interpretable and analyzable values. Additionally, this step ensured numerical consistency and prevented skewed analysis due to placeholder codes.
 
 4.  **Conversion of categorical variables:** We converted all applicable non-numeric variables to categorical format to support appropriate statistical analysis and visualization. This included responses related to employment status, education, language, and benefit receipt. This step was essential for accurate modeling and visualization, particularly for tree-based and regularized regression models.
 
@@ -147,7 +148,7 @@ We use two complementary machine learning approaches to explore the policy quest
 
 The first part of the project focuses on developing two predictive models to estimate the number of work-loss days an individual may experience, using features such as demographics, health history, insurance coverage, and other socioeconomic factors. These models aim to help policymakers understand how illness and injury impact labor force participation, thereby informing the design of targeted policy interventions.
 
-We employ two modeling techniques—random forests (a tree-based ensemble method) and elastic net regression (a regularized linear model that balances L1 and L2 penalties). These methods were chosen for their complementary strengths: random forests are capable of capturing nonlinear interactions and complex variable relationships, while elastic net regression offers interpretability and variable selection in high-dimensional settings. We compare their performance to identify the most effective and interpretable model for informing policy design. Additional methodological details are provided in Section 3.1.
+We employ two modeling techniques---random forests (a tree-based ensemble method) and elastic net regression (a regularized linear model that balances L1 and L2 penalties). These methods were chosen for their complementary strengths: random forests are capable of capturing nonlinear interactions and complex variable relationships, while elastic net regression offers interpretability and variable selection in high-dimensional settings. We compare their performance to identify the most effective and interpretable model for informing policy design. Additional methodological details are provided in Section 3.1.
 
 #### Microsimulation
 
@@ -196,7 +197,7 @@ work_loss_folds <- vfold_cv(data = work_loss_train, v = 10)
 
 Random Forests is a tree-based model that uses bagging, which is an ensembling method. The model considers random sections of the dataset and a subset of predictors to train each regression tree. This method was chosen based on past experience with this nonparametric model performing well (i.e., achieving a relatively low RMSE value) compared to other models.
 
-However, one downside is that random forests is not as easily interpretable compared to other models, such as linear regression that can offer clearer coefficients and directions between the predictors and the outcome variable. It is not easy to understand how the random forest model makes predictions across the dataset and its element of randomness further complicates interpretability. 
+However, one downside is that random forests is not as easily interpretable compared to other models, such as linear regression that can offer clearer coefficients and directions between the predictors and the outcome variable. It is not easy to understand how the random forest model makes predictions across the dataset and its element of randomness further complicates interpretability.
 
 ```{r}
 
@@ -253,7 +254,6 @@ show_best(rf_resamples)
 autoplot(enet_tuning)
 ```
 
-
 ```{r}
 
 # Finalize workflow
@@ -270,7 +270,6 @@ rf_resamples |>
   collect_metrics()
 
 ```
-
 
 ```{r}
 
@@ -465,20 +464,275 @@ model_final_fit |>
 
 ### 3.2 Microsimulation
 
-\[JASMINE ADD HERE\]
+Cleaning data for microsimulation
+
+```{r}
+## For microsimulation
+full_data <- full_data |>
+  filter(!wldayr %in% c(996,997, 998, 999))
+```
+
+We developed a microsimulation using a nationally representative dataset to evaluate the impact of a proposed cash transfer policy aimed at supporting individuals experiencing work loss. The core objective is to translate the policy\'s eligibility criteria and benefit formula into individual-level estimates, allowing us to assess who benefits, by how much, and how the benefits are distributed across income groups.
+
+The simulation begins by defining key policy parameters:
+
+1.  The threshold of work loss days required for eligibility
+
+2.  The reimbursement rate per week or day
+
+3.  Are there any caps on total reimbursement
+
+4.  Income-based or poverty-based eligibility conditions
+
+We then implement these rules to each individual wihin the data set and generate estimates of their potential reimbursement under different policy designs. By weighting these estimates, we can calculate population-level outcomes such as the mean reimbursement and the number of eligible individuals, as well as explore differences by income group.
+
+### **Counter-factual**
+
+The first simulation represents a counter-factual scenario with broad eligibility, essentially modelling what reimbursement would look like under a policy where all are eligible:
+
+1.  Eligibility: Anyone with more than 0 work loss day is eligible for reimbursement.
+
+2.  Benefit formula:
+
+    -   Individuals with less than or equal to 84 work loss days receive a reimbursement proportional to their number of lost days:
+
+    -   Reimbursement equals the number of work loss days multiplied by the weekly reimbursement rate divided by 7.
+
+    -   Individuals with greater than 84 work loss days receive a capped reimbursement equal to the full rate for 12 weeks.
+
+This simulation calculates reimbursement amounts for every individual, regardless of income or poverty status, and uses survey weights (PERWEIGHT) to estimate the mean reimbursement and the total eligible population.
+
+Counter-factual model:
+
+```{r}
+simulate_reimbursement_cf <- function(wldayr, poverty, perweight, reimbursement_rate, num_weeks) {
+  
+  eligible <- (wldayr > 0)
+  
+  reimbursement <- numeric(length(wldayr))
+  
+  below <- eligible & (wldayr <= 84)
+  above <- eligible & (wldayr > 84)
+  
+  reimbursement[below] <- (wldayr[below]) * (reimbursement_rate / 7)
+  reimbursement[above] <- reimbursement_rate * num_weeks
+  
+  data.frame(
+    id = seq_along(wldayr),
+    reimbursement = reimbursement,
+    perweight = perweight,
+    income = full_data$incfam07on
+  )
+}
+
+```
+
+```{r}
+simulated_data_cf <- simulate_reimbursement_cf(
+  wldayr = full_data$wldayr,
+  poverty = full_data$poverty,
+  perweight = full_data$perweight,
+  reimbursement_rate = 1194,
+  num_weeks = 12
+)
+
+
+weighted_data_cf <- simulated_data_cf |> 
+  as_survey_design(weights = perweight)
+
+
+result_cf <- weighted_data_cf |>
+  summarise(
+    mean_reimbursement = survey_mean(reimbursement),
+    num_eligible = survey_total(as.numeric(reimbursement > 0))
+  )
+
+# Graph to show mean reimbursement per family income level
+simulated_data_cf |>
+  group_by(income) |>
+  filter(income < 96 & income != 10 & income != 21) |>
+  mutate(mean_reimbursement = mean(reimbursement),
+         income = case_when(
+           income == 11 ~ "$0 - $34,999",
+           income == 12 ~ "$35,000 - $49,999",
+           income == 22 ~ "$50,000 - $74,999",
+           income == 23 ~ "$75,000 - $99,999",
+           income == 24 ~ "$100,000 and over"
+         ),
+    income = factor(income, levels = c("$0 - $34,999", "$35,000 - $49,999", "$50,000 - $74,999", "$75,000 - $99,999", "$100,000 and over"))) |>
+  count(mean_reimbursement) |>
+  ggplot() +
+  geom_col(aes(x = income, y = mean_reimbursement, fill = income)) +
+  labs(title = "Average reimbursement amount per income level",
+      x = "Income Level",
+      y = "Mean Reimbursement") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+
+```
+
+Results:
+
+The bar chart above shows the average reimbursement per income level. This is under the simulated counter-factual reimbursement model.
+
+We see that people earning between \$0 to \$34999 and \$3500 to \$49999 receive the highest average reimbursement of about \$700. People earning \$100000 and over received the lowest reimbursement of about \$500. Under this policy, lower income groups received higher average reimbursement than higher income, despite equal reimbursement caps. This reflects that lower-income workers had more work-loss days.
+
+### **Adjusted Policy Model**
+
+The second simulation implements a targeted policy with stricter eligibility rules, reflecting a more realistic intervention:
+
+1.  Eligibility:
+
+    -   Individuals must have at least 28 work loss days
+
+    -   Must fall below a specified poverty threshold (poverty index less than 37 or equal to 38).
+
+2.  Benefit formula:
+
+    -   Eligible individuals with less than or equal to 91 work loss days are reimbursed only for days beyond the 28-day threshold
+
+    -   Reimbursement=(work loss days−28)×(reimbursement rate / 7​)
+
+    -   Individuals with greater than 91 work loss days receive a capped reimbursement equal to the rate for 9 weeks.
+
+As in the counter-factual, we estimate mean reimbursement and number eligible using survey weights (PERWEIGHT), and visualize results by income level.
+
+```{r}
+simulate_reimbursement <- function(wldayr, poverty, perweight, reimbursement_rate, num_weeks) {
+  eligible <- (wldayr > 28 & (poverty < 37 | poverty == 38))  
+  
+  reimbursement <- numeric(length(wldayr))
+  
+  below <- eligible & (wldayr <= 91)
+  above <- eligible & (wldayr > 91)
+  
+  reimbursement[below] <- (wldayr[below] - 28) * (reimbursement_rate / 7)
+  reimbursement[above] <- reimbursement_rate * num_weeks
+  
+  data.frame(
+    id = seq_along(wldayr),
+    reimbursement = reimbursement,
+    perweight = perweight,
+    income = full_data$incfam07on
+  )
+}
+
+```
+
+```{r}
+simulated_data_custom_rate <- simulate_reimbursement(
+  wldayr = full_data$wldayr, 
+  poverty = full_data$poverty, 
+  perweight = full_data$perweight,
+  reimbursement_rate = 1194,
+  num_weeks = 9
+)
+
+weighted_data <- simulated_data_custom_rate |> 
+  as_survey_design(weights = perweight)
+
+
+result_final <- weighted_data |>
+  summarise(
+    mean_reimbursement = survey_mean(reimbursement),
+    num_eligible = survey_total(as.numeric(reimbursement > 0))
+  )
+
+# Graph to show mean reimbursement per family income level
+simulated_data_custom_rate |>
+  group_by(income) |>
+  filter(income < 96 & income != 10 & income != 21) |>
+  mutate(mean_reimbursement = mean(reimbursement),
+         income = case_when(
+           income == 11 ~ "$0 - $34,999",
+           income == 12 ~ "$35,000 - $49,999",
+           income == 22 ~ "$50,000 - $74,999",
+           income == 23 ~ "$75,000 - $99,999",
+           income == 24 ~ "$100,000 and over"
+         ),
+    income = factor(income, levels = c("$0 - $34,999", "$35,000 - $49,999", "$50,000 - $74,999", "$75,000 - $99,999", "$100,000 and over"))) |>
+  count(mean_reimbursement) |>
+  ggplot() +
+  geom_col(aes(x = income, y = mean_reimbursement, fill = income)) +
+  labs(
+    title = "Average reimbursement amount per income level",
+    x = "Income Level",
+    y = "Mean Reimbursement"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+Results:
+
+In this case the reimbursements cap is lowered from 12 weeks to 9 weeks. Eligibility is also narrowed based on poverty score. People in income level \$0 to \$34999 have the highest mean reimbursement of about \$240. and people in income level \$100000 and over have the lowest mean reimbursement of about \$30.
+
+Lower income group still has the high average reimbursement but it is lower than the counter-factual model. This adjusted policy model targets reimbursements towards lower-income individuals by incurring lower total expenditure by the government.
+
+### **Comparison of the Two Models**
+
+The key difference between the models is in the way we define eligibility and by how much they receive.
+
+The counter-factual model is universal, it includes anyone with any work loss, regardless of poverty level or severity, resulting in a larger eligible population and higher overall expenditure. On the other hand, the adjusted policy model is targeted, it restricts benefits to lower-income individuals who have experienced substantial work loss, leading to a smaller eligible group and lower total reimbursement.
+
+Both models provide insights into the distributional effects of the policy. While the counter-factual shows the maximum reach of benefits, the adjusted policy model reveals how narrowing eligibility shifts support toward the most disadvantaged but reduces total expenditure.
+
+## Plot
+
+```{r}
+simulated_data_cf$model <- "Counterfactual"
+simulated_data_custom_rate$model <- "Adjusted Policy"
+
+comparison_data <- rbind(simulated_data_cf, simulated_data_custom_rate)
+
+comparison_data <- comparison_data |>
+  select(reimbursement, model)
+
+summary_stats <- comparison_data |>
+  group_by(model) |>
+  summarise(
+    mean_reimbursement = mean(reimbursement),
+    sd_reimbursement = sd(reimbursement),
+    min_reimbursement = min(reimbursement),
+    max_reimbursement = max(reimbursement)
+  )
+
+
+ggplot(comparison_data, aes(x = reimbursement, color = model)) +
+  geom_line(stat = "density", size = 1.5) + 
+  scale_color_manual(values = c("blue", "red")) +  
+  labs(
+    title = "Comparison of Reimbursements: Counterfactual vs. Adjusted Policy",
+    x = "Reimbursement Amount",
+    y = "Density",
+    color = "Model"
+  ) +
+  theme_minimal() + 
+  theme(
+    legend.position = "top", 
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold")  
+  )
+
+ggplot()
+```
+
+The Graph above, compares the distribution of reimbursement under the counter-factual and adjusted policy model.
+
+Under the adjusted policy model the curve (blue) is slightly leftward shifted as compared to the counter-factual (red). This reflects the lower reimbursement amounts overall. Although lower income group still receive a higher reimbursement, it is comparatively lower in adjusted policy model. This is due to eligibility and lower number of weeks being reimbursed. The adjusted policy model achieves greater targeting of benefits towards lower-income individuals while reducing the total government expenditure.
 
 ## 4. Conclusion
-General things to include in the conclusion:
-- Implications for policymakers when deciding which predictive model to implement
 
-- Implications for policymakers when deciding which version of the policy to implement (cost, efficiency vs. equity, etc.)
+General things to include in the conclusion: - Implications for policymakers when deciding which predictive model to implement
+
+-   Implications for policymakers when deciding which version of the policy to implement (cost, efficiency vs. equity, etc.)
 
 Things we would like to do in the future if more time/processing power:
 
-- Include more variables in the model and try additional types of models
+-   Include more variables in the model and try additional types of models
 
-- Incorporate additional datasets into the microsimulation that have more granular geographic information to explore how state policies could affect federal policy implementation
-
+-   Incorporate additional datasets into the microsimulation that have more granular geographic information to explore how state policies could affect federal policy implementation
 
 ## 5. References
 
@@ -492,5 +746,4 @@ Paid Family Leave Across OECD Countries. (2022, March 1). Bipartisan Policy Cent
 
 Usual Weekly Earnings Summary. (2025, April 16). U.S. Bureau of Labor Statistics. https://www.bls.gov/news.release/wkyeng.nr0.htm
 
-What’s on the Table? A Review of Federal Paid Family Leave Proposals. (2025, April 28). Bipartisan Policy Center. https://bipartisanpolicy.org/explainer/whats-on-the-table-a-review-of-federal-paid-family-leave-proposals/
-
+What's on the Table? A Review of Federal Paid Family Leave Proposals. (2025, April 28). Bipartisan Policy Center. https://bipartisanpolicy.org/explainer/whats-on-the-table-a-review-of-federal-paid-family-leave-proposals/
