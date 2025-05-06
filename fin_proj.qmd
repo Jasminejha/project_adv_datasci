@@ -166,13 +166,11 @@ In the third step, we systematically vary key parameters of the policy to assess
 
 -   **Lack of geographical data:** Incorporating geographic data would have enabled us to distinguish between state and federal policy effects in our microsimulation calculator, providing a more nuanced understanding of policy implementation. Unfortunately, the absence of such data restricted our ability to analyze these geographic variations.
 
-## 3. Implementation
+## 3. Predictive Modelling
 
-### 3.1 Predictive Modelling
+### 3.1 Setup
 
-#### 3.1.1 Setup
-
-##### Split data into testing and training data
+#### 3.1.1 Split data into testing and training data
 
 ```{r}
 
@@ -185,7 +183,7 @@ work_loss_train <- training(x = work_loss_split)
 work_loss_test  <- testing(x = work_loss_split)
 ```
 
-##### Set up resampling for model selection
+#### 3.1.2 Set up resampling for model selection
 
 ```{r}
 
@@ -193,7 +191,9 @@ work_loss_test  <- testing(x = work_loss_split)
 work_loss_folds <- vfold_cv(data = work_loss_train, v = 10)
 ```
 
-#### 3.1.2 Create Candidate Model: Random Forests
+### 3.2 Create Candidate Models
+
+#### 3.2.1 Random Forests
 
 Random Forests is a tree-based model that uses bagging, which is an ensembling method. The model considers random sections of the dataset and a subset of predictors to train each regression tree. This method was chosen based on past experience with this nonparametric model performing well (i.e., achieving a relatively low RMSE value) compared to other models.
 
@@ -251,7 +251,7 @@ show_best(rf_resamples)
 ```{r}
 
 # Visualize tuning results
-autoplot(enet_tuning)
+autoplot(rf_tuning)
 ```
 
 ```{r}
@@ -289,19 +289,13 @@ rf_rmse_plot <- collect_metrics(
 rf_rmse_plot
 ```
 
-#### 3.1.3 Create Candidate Mode: Elastic Net Regression
+#### 3.2.1 Elastic Net Regression
 
 This model uses regularization, which is a powerful technique for parametric regression models. Regularization, or penalization, allows linear regression to work with very wide data, to generate stable estimates for data with multicollinearity, and to perform feature selection.
 
 Elastic net regression combines ridge regression and LASSO regression. It has two hyperparameters, λ1 and λ2. Sometimes the hyperparameters are λ and mixture, which determines how much of λ to apply to each penalty (i.e. mixture = 0 is ridge regression and mixture = 1 is LASSO regression).
 
-We used this model as:
-
--   It can work with datasets with a large number of variables
-
--   It can generate stable esitmates for data with multicollinearity
-
--   It can perform feature selection, but in a less dramatic fashion than LASSO regression
+We used this model as it can work with datasets with a large number of variables, generate stable esitmates for data with multicollinearity, perform feature selection, but in a less dramatic fashion than LASSO regression
 
 Elastic net regression requires all variables to be centered and scaled (standardized) before estimation. This way, the coefficients are interpreted in standardized units. To meet this criteria, we created a recipe that removed an ID variables, removed correlated numerical predictors, imputed the mean for any numerical predictors with missing values, hot coded binary variables for categorical ones, removed any predictors with zero variance or near-zero variance. Additionally, we removed missing observations in the outcome variable.
 
@@ -312,11 +306,10 @@ enet_rec <- recipe(wldayr ~ ., data = work_loss_train) |>
   update_role(c(nhispid), new_role = "ID") |>
   step_rm(has_role("ID")) |>
   step_dummy(all_factor_predictors()) |>
-  step_normalize(all_numeric_predictors()) |>
   step_zv(all_predictors()) |>
   step_corr(all_numeric_predictors()) |>
   step_impute_mean(all_numeric_predictors()) |>
-  step_naomit(all_outcomes()) 
+  step_naomit(wldayr)
 
 # Create model
 enet_mod <- linear_reg(penalty = tune(), mixture = tune()) |>
@@ -388,7 +381,7 @@ enet_rmse_plot <- collect_metrics(
 enet_rmse_plot
 ```
 
-#### 3.1.4 Model Comparison
+### 3.3 Model Comparison
 
 ```{r}
 
@@ -450,7 +443,7 @@ kable(model_predictions |>
   count(correct))
 ```
 
-#### 3.1.5 Variable Importance
+### 3.4 Variable Importance
 
 ```{r}
 
@@ -462,17 +455,9 @@ model_final_fit |>
   xlab("Variable")
 ```
 
-### 3.2 Microsimulation
+## 4. Microsimulation
 
-Cleaning data for microsimulation
-
-```{r}
-## For microsimulation
-full_data <- full_data |>
-  filter(!wldayr %in% c(996,997, 998, 999))
-```
-
-We developed a microsimulation using a nationally representative dataset to evaluate the impact of a proposed cash transfer policy aimed at supporting individuals experiencing work loss. The core objective is to translate the policy\'s eligibility criteria and benefit formula into individual-level estimates, allowing us to assess who benefits, by how much, and how the benefits are distributed across income groups.
+We developed a microsimulation using a nationally representative dataset to evaluate the impact of a proposed cash transfer policy aimed at supporting individuals experiencing work loss. The core objective is to translate the policy's eligibility criteria and benefit formula into individual-level estimates, allowing us to assess who benefits, by how much, and how the benefits are distributed across income groups.
 
 The simulation begins by defining key policy parameters:
 
@@ -480,15 +465,22 @@ The simulation begins by defining key policy parameters:
 
 2.  The reimbursement rate per week or day
 
-3.  Are there any caps on total reimbursement
+3.  Any caps on total reimbursement
 
 4.  Income-based or poverty-based eligibility conditions
 
-We then implement these rules to each individual wihin the data set and generate estimates of their potential reimbursement under different policy designs. By weighting these estimates, we can calculate population-level outcomes such as the mean reimbursement and the number of eligible individuals, as well as explore differences by income group.
+We then implement these rules to each individual wihin the full data set and generate estimates of their potential reimbursement under different policy designs. By weighting these estimates, we can calculate population-level outcomes such as the mean reimbursement and the number of eligible individuals, as well as explore differences by income group.
 
-### **Counter-factual**
+```{r}
 
-The first simulation represents a counter-factual scenario with broad eligibility, essentially modelling what reimbursement would look like under a policy where all are eligible:
+# For microsimulation
+full_data <- full_data |>
+  filter(!wldayr %in% c(996,997, 998, 999))
+```
+
+### **4.1 Counterfactual**
+
+The first simulation represents a counterfactual scenario with broad eligibility, essentially modelling what reimbursement would look like under a policy where all are eligible:
 
 1.  Eligibility: Anyone with more than 0 work loss day is eligible for reimbursement.
 
@@ -501,8 +493,6 @@ The first simulation represents a counter-factual scenario with broad eligibilit
     -   Individuals with greater than 84 work loss days receive a capped reimbursement equal to the full rate for 12 weeks.
 
 This simulation calculates reimbursement amounts for every individual, regardless of income or poverty status, and uses survey weights (PERWEIGHT) to estimate the mean reimbursement and the total eligible population.
-
-Counter-factual model:
 
 ```{r}
 simulate_reimbursement_cf <- function(wldayr, poverty, perweight, reimbursement_rate, num_weeks) {
@@ -572,13 +562,11 @@ simulated_data_cf |>
 
 ```
 
-Results:
-
 The bar chart above shows the average reimbursement per income level. This is under the simulated counter-factual reimbursement model.
 
 We see that people earning between \$0 to \$34999 and \$3500 to \$49999 receive the highest average reimbursement of about \$700. People earning \$100000 and over received the lowest reimbursement of about \$500. Under this policy, lower income groups received higher average reimbursement than higher income, despite equal reimbursement caps. This reflects that lower-income workers had more work-loss days.
 
-### **Adjusted Policy Model**
+### **4.2 Adjusted Policy Model**
 
 The second simulation implements a targeted policy with stricter eligibility rules, reflecting a more realistic intervention:
 
@@ -596,7 +584,7 @@ The second simulation implements a targeted policy with stricter eligibility rul
 
     -   Individuals with greater than 91 work loss days receive a capped reimbursement equal to the rate for 9 weeks.
 
-As in the counter-factual, we estimate mean reimbursement and number eligible using survey weights (PERWEIGHT), and visualize results by income level.
+As in the counterfactual, we estimate mean reimbursement and number eligible using survey weights (PERWEIGHT), and visualize results by income level.
 
 ```{r}
 simulate_reimbursement <- function(wldayr, poverty, perweight, reimbursement_rate, num_weeks) {
@@ -665,21 +653,17 @@ simulated_data_custom_rate |>
 
 ```
 
-Results:
-
 In this case the reimbursements cap is lowered from 12 weeks to 9 weeks. Eligibility is also narrowed based on poverty score. People in income level \$0 to \$34999 have the highest mean reimbursement of about \$240. and people in income level \$100000 and over have the lowest mean reimbursement of about \$30.
 
-Lower income group still has the high average reimbursement but it is lower than the counter-factual model. This adjusted policy model targets reimbursements towards lower-income individuals by incurring lower total expenditure by the government.
+Lower income group still has the high average reimbursement but it is lower than the counterfactual model. This adjusted policy model targets reimbursements towards lower-income individuals by incurring lower total expenditure by the government.
 
-### **Comparison of the Two Models**
+### **4.3 Comparison of Microsimulation Models**
 
 The key difference between the models is in the way we define eligibility and by how much they receive.
 
-The counter-factual model is universal, it includes anyone with any work loss, regardless of poverty level or severity, resulting in a larger eligible population and higher overall expenditure. On the other hand, the adjusted policy model is targeted, it restricts benefits to lower-income individuals who have experienced substantial work loss, leading to a smaller eligible group and lower total reimbursement.
+The counterfactual model is universal, it includes anyone with any work loss, regardless of poverty level or severity, resulting in a larger eligible population and higher overall expenditure. On the other hand, the adjusted policy model is targeted, it restricts benefits to lower-income individuals who have experienced substantial work loss, leading to a smaller eligible group and lower total reimbursement.
 
-Both models provide insights into the distributional effects of the policy. While the counter-factual shows the maximum reach of benefits, the adjusted policy model reveals how narrowing eligibility shifts support toward the most disadvantaged but reduces total expenditure.
-
-## Plot
+Both models provide insights into the distributional effects of the policy. While the counterfactual shows the maximum reach of benefits, the adjusted policy model reveals how narrowing eligibility shifts support toward the most disadvantaged but reduces total expenditure.
 
 ```{r}
 simulated_data_cf$model <- "Counterfactual"
@@ -717,23 +701,19 @@ ggplot(comparison_data, aes(x = reimbursement, color = model)) +
 
 ```
 
-The Graph above, compares the distribution of reimbursement under the counter-factual and adjusted policy model.
+The graph above, compares the distribution of reimbursement under the counter-factual and adjusted policy model.
 
 Under the adjusted policy model the curve (blue) is slightly leftward shifted as compared to the counter-factual (red). This reflects the lower reimbursement amounts overall. Although lower income group still receive a higher reimbursement, it is comparatively lower in adjusted policy model. This is due to eligibility and lower number of weeks being reimbursed. The adjusted policy model achieves greater targeting of benefits towards lower-income individuals while reducing the total government expenditure.
 
-## 4. Conclusion
+## 5. Conclusion
 
-General things to include in the conclusion: - Implications for policymakers when deciding which predictive model to implement
+This study has important implications for policymakers in their decision-making process regarding predictive model selection and policy implementation. Policymakers must weigh factors such as the computational power and interpretability of different predictive models. For example, selecting a more sophisticated model may provide greater accuracy, but it could be more computationally intensive, requiring trade-offs between resource allocation and predictive precision.
 
--   Implications for policymakers when deciding which version of the policy to implement (cost, efficiency vs. equity, etc.)
+When considering which version of a tax credit disbursement policy to implement, policymakers should focus on the broader societal impact, balancing economic efficiency against the need for equitable outcomes. A policy that is highly efficient may not always address the needs of the most vulnerable populations, so equity considerations should be integrated into the decision-making process, ensuring that the benefits of the policy are distributed fairly.
 
-Things we would like to do in the future if more time/processing power:
+Looking to the future, there are several avenues to further enhance our analysis. With more time and processing power, incorporating a wider range of variables into the predictive model could improve accuracy and offer deeper insights. Additionally, expanding the microsimulation by integrating additional datasets that offer more granular geographic information would enable us to explore the effects of state-level policies on federal policy implementation, helping to better understand the nuances of policy interactions across different levels of government.
 
--   Include more variables in the model and try additional types of models
-
--   Incorporate additional datasets into the microsimulation that have more granular geographic information to explore how state policies could affect federal policy implementation
-
-## 5. References
+## 6. References
 
 Bartel, A. (2023, September 25). Getting the Job Done: How Paid Family Leave Impacts Employers. Columbia Business School. https://business.columbia.edu/research-brief/research-brief/getting-job-done-how-paid-family-leave-impacts-employers
 
