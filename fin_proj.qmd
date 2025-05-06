@@ -715,7 +715,6 @@ ggplot(comparison_data, aes(x = reimbursement, color = model)) +
     plot.title = element_text(hjust = 0.5, size = 16, face = "bold")  
   )
 
-ggplot()
 ```
 
 The Graph above, compares the distribution of reimbursement under the counter-factual and adjusted policy model.
