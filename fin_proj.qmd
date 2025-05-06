@@ -309,7 +309,8 @@ enet_rec <- recipe(wldayr ~ ., data = work_loss_train) |>
   step_zv(all_predictors()) |>
   step_corr(all_numeric_predictors()) |>
   step_impute_mean(all_numeric_predictors()) |>
-  step_naomit(wldayr)
+  step_naomit(wldayr) |>
+  step_normalize(all_predictors())
 
 # Create model
 enet_mod <- linear_reg(penalty = tune(), mixture = tune()) |>
@@ -325,7 +326,7 @@ enet_wf <- workflow() |>
 enet_grid <- grid_regular(
   penalty(), 
   mixture(),
-  levels = 20
+  levels = 5
 )
 
 # Tune grid
@@ -345,7 +346,7 @@ show_best(enet_tuning)
 autoplot(enet_tuning)
 ```
 
-The RMSE calculated is 8.17. This shows that regularization does not help much in this case. This makes sense because the regression specification is parsimonious and deliberate.
+The RMSE calculated is 8.01. This shows that regularization does not help much in this case. This makes sense because the regression specification is parsimonious and deliberate.
 
 ```{r}
 
