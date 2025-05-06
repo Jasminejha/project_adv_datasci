@@ -454,10 +454,18 @@ kable(model_predictions |>
 
 model_final_fit |>
   extract_fit_parsnip() |>
-  vip(num_features = 20) +
+  vip(num_features = 20) %>%
+  .$data |>
+  mutate(
+    Importance = Importance / max(Importance),
+    Variable = fct_reorder(.x = Importance, .f = Variable)
+  ) |>
+  ggplot(aes(Importance, Variable)) +
+  geom_col() +
   labs(title = "Top Predictors in Best Performing Model") +
   ylab("Importance") +
   xlab("Variable")
+
 ```
 
 ## 4. Microsimulation
