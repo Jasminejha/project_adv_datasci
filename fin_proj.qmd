@@ -150,7 +150,7 @@ We use two complementary machine learning approaches to explore the policy quest
 
 The first part of the project focuses on developing two predictive models to estimate the number of work loss days an individual may experience, using features such as demographics, health history, insurance coverage, and other socioeconomic factors. These models aim to help policymakers understand how illness and injury impact labor force participation, thereby informing the design of targeted policy interventions.
 
-We employ two modeling techniques---random forests (a tree-based ensemble method) and elastic net regression (a regularized linear model that balances L1 and L2 penalties). These methods were chosen for their complementary strengths: random forests are capable of capturing nonlinear interactions and complex variable relationships, while elastic net regression offers interpretability and variable selection in high-dimensional settings. We compare their performance to identify the most effective and interpretable model for informing policy design. Additional methodological details are provided in Section 3.1.
+We employ two modeling techniques---random forests (a tree-based ensemble method) and elastic net regression (a regularized linear model that balances L1 and L2 penalties). These methods were chosen for their complementary strengths: random forests are capable of capturing nonlinear interactions and complex variable relationships, while elastic net regression offers interpretability and variable selection in high-dimensional settings. We compare their performance to identify the most effective and interpretable model for informing policy design. Additional methodological details are provided in Section 3.2.
 
 #### Microsimulation
 
@@ -827,19 +827,3 @@ This study has important implications for policymakers in their decision-making 
 When considering which version of a tax credit disbursement policy to implement, policymakers should focus on the broader societal impact, balancing economic efficiency against the need for equitable outcomes. A policy that is highly efficient may not always address the needs of the most vulnerable populations, so equity considerations should be integrated into the decision-making process, ensuring that the benefits of the policy are distributed fairly. Noticeably, the results from the counterfactual microsimulation suggests that people who are part of families with lower levels of income experience more work days missed due to illness and injury. Thus, family leave policies would generally support lower-income individuals and families and could arguably be viewed as a poverty alleviation strategy.
 
 Looking to the future, there are several avenues to further enhance our analysis. With more time and processing power, incorporating a wider range of variables into the predictive model could improve accuracy and offer deeper insights. Additionally, expanding the microsimulation by integrating additional datasets that offer more granular geographic information would enable us to explore the effects of state-level policies on federal policy implementation, helping to better understand the nuances of policy interactions across different levels of government.
-
-## 6. References
-
-Bartel, A. (2023, September 25). Getting the Job Done: How Paid Family Leave Impacts Employers. Columbia Business School. https://business.columbia.edu/research-brief/research-brief/getting-job-done-how-paid-family-leave-impacts-employers
-
-Bartel, A. (2023, September 25). Getting the Job Done: How Paid Family Leave Impacts Employers. Columbia Business School. https://business.columbia.edu/research-brief/research-brief/getting-job-done-how-paid-family-leave-impacts-employers
-
-Davis, J. (2025, April 8). States with paid family leave 2025: Map with employer requirements. Onpay. https://onpay.com/insights/paid-family-leave-by-state/
-
-Lynn A. Blewett, Julia A. Rivera Drew, Miriam L. King, Kari C.W. Williams, Daniel Backman, Annie Chen, and Stephanie Richards. IPUMS Health Surveys: National Health Interview Survey, Version 7.4 \[dataset\]. Minneapolis, MN: IPUMS, 2024. https://doi.org/10.18128/D070.V7.4
-
-Paid Family Leave Across OECD Countries. (2022, March 1). Bipartisan Policy Center. https://bipartisanpolicy.org/explainer/paid-family-leave-across-oecd-countries/
-
-Usual Weekly Earnings Summary. (2025, April 16). U.S. Bureau of Labor Statistics. https://www.bls.gov/news.release/wkyeng.nr0.htm
-
-What's on the Table? A Review of Federal Paid Family Leave Proposals. (2025, April 28). Bipartisan Policy Center. https://bipartisanpolicy.org/explainer/whats-on-the-table-a-review-of-federal-paid-family-leave-proposals/
