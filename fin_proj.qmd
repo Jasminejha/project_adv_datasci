@@ -22,8 +22,9 @@ library(haven)
 library(here)
 library(ipumsr)
 library(janitor)
-library(tictoc)
 library(srvyr)
+library(knitr)
+library(vip)
 ```
 
 ## Executive Summary
@@ -261,6 +262,9 @@ show_best(rf_tuning)
 autoplot(rf_tuning)
 ```
 
+The best RMSE is x. This may be a bit higher than expected, but a good metric to have in order to compare it with the elastic net model.
+
+Finalizing the workflow based on the best hyperparameters:
 ```{r}
 
 # Finalize workflow
@@ -422,7 +426,7 @@ model_final_fit <-
   last_fit(work_loss_split) 
 
 # Collect metrics for RMSE
-kable(model_final_fit |>
+knitr::kable(model_final_fit |>
   collect_metrics() |>
   filter(.metric == "rmse"))
 ```
@@ -437,7 +441,7 @@ model_predictions <- bind_cols(
 )
 
 # Display the first 10 predictions against the actual values
-kable(select(model_predictions, wldayr, starts_with(".pred")))
+knitr::kable(select(model_predictions, wldayr, starts_with(".pred")))
 ```
 
 ```{r}
@@ -790,7 +794,7 @@ ggplot(comparison_data1, aes(x = income, y = mean_reimbursement, fill = model)) 
 
 This study has important implications for policymakers in their decision-making process regarding predictive model selection and policy implementation. Policymakers must weigh factors such as the computational power and interpretability of different predictive models. For example, selecting a more sophisticated model may provide greater accuracy, but it could be more computationally intensive, requiring trade-offs between resource allocation and predictive precision.
 
-When considering which version of a tax credit disbursement policy to implement, policymakers should focus on the broader societal impact, balancing economic efficiency against the need for equitable outcomes. A policy that is highly efficient may not always address the needs of the most vulnerable populations, so equity considerations should be integrated into the decision-making process, ensuring that the benefits of the policy are distributed fairly.
+When considering which version of a tax credit disbursement policy to implement, policymakers should focus on the broader societal impact, balancing economic efficiency against the need for equitable outcomes. A policy that is highly efficient may not always address the needs of the most vulnerable populations, so equity considerations should be integrated into the decision-making process, ensuring that the benefits of the policy are distributed fairly. Noticeably, the results from the counterfactual microsimulation suggests that people who are part of families with lower levels of income experience more work days missed due to illness and injury. Thus, family leave policies would generally support lower-income individuals and families and could arguably be viewed as a poverty alleviation strategy.
 
 Looking to the future, there are several avenues to further enhance our analysis. With more time and processing power, incorporating a wider range of variables into the predictive model could improve accuracy and offer deeper insights. Additionally, expanding the microsimulation by integrating additional datasets that offer more granular geographic information would enable us to explore the effects of state-level policies on federal policy implementation, helping to better understand the nuances of policy interactions across different levels of government.
 
