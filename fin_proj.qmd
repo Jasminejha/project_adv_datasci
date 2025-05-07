@@ -402,6 +402,8 @@ bind_rows(
 )
 ```
 
+Random forest has a relatively better RMSE compared to the elastic net model. Therefore, we fit the data on the random forest model and create predictions based on the testing data. 
+
 ```{r}
 
 # Select the best resamples via select_best
@@ -450,6 +452,8 @@ kable(model_predictions |>
          )) |>
   count(correct))
 ```
+
+Clearly the model is not perfect. While it did predict more work loss day values correctly than incorrectly, better performance should be achieved before implementation of this model. Some ways to improve the model are explored in the conclusion of this project. At the highest level, adding in additional variables would likely have improved the model or selecting different variables that are better predictors of work loss days.
 
 ### 3.4 Variable Importance
 
