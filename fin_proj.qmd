@@ -8,6 +8,7 @@ embed-resources: true
 editor_options: 
   chunk_output_type: console
 bibliography: references.bib
+toc: true
 ---
 
 ## Preliminaries
@@ -198,6 +199,9 @@ work_loss_folds <- vfold_cv(data = work_loss_train, v = 10)
 Random Forests is a tree-based model that uses bagging, which is an ensembling method. The model considers random sections of the dataset and a subset of predictors to train each regression tree. This method was chosen based on past experience with this nonparametric model performing well (i.e., achieving a relatively low RMSE value) compared to other models.
 
 However, one downside is that random forests is not as easily interpretable compared to other models, such as linear regression that can offer clearer coefficients and directions between the predictors and the outcome variable. It is not easy to understand how the random forest model makes predictions across the dataset and its element of randomness further complicates interpretability.
+
+
+A mtry value of 15 was chosen based on previous model running, which demonstrated that the mtry value did not vary within the top five tuning results. For the sake of faster processing, only min_n was tuned.
 
 ```{r}
 
@@ -499,11 +503,13 @@ The first simulation represents a counterfactual scenario with broad eligibility
 
 2.  Benefit formula:
 
-    -   Individuals with less than or equal to 84 work loss days receive a reimbursement proportional to their number of lost days:
+    -   Individuals with less than or equal to 84 work loss days receive a reimbursement proportional to their number of lost days. This reflects the FAMILY Act, which is a Democratic party-backed proposal that has been introduced in Congress most recently in 2023-24. If passed, it would provide 12 weeks of paid family leave.[@whatso2025]
 
     -   Reimbursement equals the number of work loss days multiplied by the weekly reimbursement rate divided by 7.
 
     -   Individuals with greater than 84 work loss days receive a capped reimbursement equal to the full rate for 12 weeks.
+
+    -   The national median weekly earnings level of full-time wage and salary workers Q1 of 2025 were used as the weekly reimbursement rate. This results in a weekly reimbursement rate of \$1194.[@usualwe2025] This reflects how current state policies determine the maximum weekly benefit based on statewide average wages.[@statepa2024a] Using the U.S. Bureau of Labor Statistics median rate gives us a comparable way to simulate what reimbursements could look like at the national level.
 
 This simulation calculates reimbursement amounts for every individual, regardless of income or poverty status, and uses survey weights (PERWEIGHT) to estimate the mean reimbursement and the total eligible population.
 
