@@ -155,9 +155,9 @@ We employ two modeling techniques---random forests (a tree-based ensemble method
 
 The second part of the project involves the creation of a microsimulation using a built-in microsimulation calculator to implement a proposed tax credit or cash transfer policy.
 
-We begin by defining the policy parameters, including how the tax credit amount is determined based on the number of work-loss days, household income, number of children, and other relevant factors. The microsimulation allows us to estimate the impact of the policy at the individual and household level, simulating outcomes under different eligibility rules and benefit structures.
+We begin by defining the policy parameters based on existing state family leave policies and proposed federal policies. The microsimulation allows us to estimate the impact of the policy at the individual and household level, simulating outcomes under different eligibility rules and benefit structures.
 
-In the third step, we systematically vary key parameters of the policy to assess the distributional effects of these changes. This sensitivity analysis helps identify equity concerns and possible unintended consequences such as employers reducing paid sick leave offerings in response to the new government provision. To contextualize these concerns, we draw on existing literature from the U.S. and other countries regarding employer responses to publicly funded sick leave programs.
+In the third step, we systematically vary key parameters of the policy to assess the distributional effects of these changes. This sensitivity analysis helps identify equity concerns and possible unintended consequences such as employers reducing paid sick leave offerings in response to the new government provision. 
 
 ### 2.3 Limitations
 
