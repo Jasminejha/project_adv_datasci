@@ -14,6 +14,9 @@ toc: true
 ## Preliminaries
 
 ```{r}
+#| output: false
+#| warning: false
+#| message: false
 
 library(tidyverse)
 library(tidymodels)
@@ -46,7 +49,7 @@ A primary concern about family leave policies is that they would adversely affec
 
 #### Data Description
 
-We used the 2018 dataset from the National Health Interview Survey, available on the IPUMS website. This dataset includes 72,831 observations and 1,503 variables. We selected the 2018 dataset because it offers a relatively large number of observations alongside a wide range of variables compared to later (i.e., more recent) years.
+We used the 2018 dataset from the National Health Interview Survey, available on the IPUMS website [@blewett]. This dataset includes 72,831 observations and 1,503 variables. We selected the 2018 dataset because it offers a relatively large number of observations alongside a wide range of variables compared to later (i.e., more recent) years.
 
 The 1503 variables pertained to household and individual level information on demographic characteristics, socioeconomic status, general health status, mortality, specific diseases, health conditions, health behaviours, health education, medical care and access, health insurance, mental health, vaccinations history, alternative health, and social determinants of health.
 
@@ -65,6 +68,7 @@ full_data <- read_ipums_micro(ddi)
 Our final analytic dataset consists of 72,752 observations and 104 variables. We applied several preprocessing steps to ensure the data was clean, interpretable, and ready for analysis and modeling.
 
 ```{r}
+#| warning: false
 
 # Cleaning Names
 full_data <- full_data |>
@@ -146,7 +150,7 @@ We use two complementary machine learning approaches to explore the policy quest
 
 The first part of the project focuses on developing two predictive models to estimate the number of work loss days an individual may experience, using features such as demographics, health history, insurance coverage, and other socioeconomic factors. These models aim to help policymakers understand how illness and injury impact labor force participation, thereby informing the design of targeted policy interventions.
 
-We employ two modeling techniques---random forests (a tree-based ensemble method) and elastic net regression (a regularized linear model that balances L1 and L2 penalties). These methods were chosen for their complementary strengths: random forests are capable of capturing nonlinear interactions and complex variable relationships, while elastic net regression offers interpretability and variable selection in high-dimensional settings. We compare their performance to identify the most effective and interpretable model for informing policy design. Additional methodological details are provided in Section 3.1.
+We employ two modeling techniques---random forests (a tree-based ensemble method) and elastic net regression (a regularized linear model that balances L1 and L2 penalties). These methods were chosen for their complementary strengths: random forests are capable of capturing nonlinear interactions and complex variable relationships, while elastic net regression offers interpretability and variable selection in high-dimensional settings. We compare their performance to identify the most effective and interpretable model for informing policy design. Additional methodological details are provided in Section 3.2.
 
 #### Microsimulation
 
@@ -200,6 +204,7 @@ However, one downside is that random forests is not as easily interpretable comp
 A mtry value of 15 was chosen based on previous model running, which demonstrated that the mtry value did not vary within the top five tuning results. For the sake of faster processing, only min_n was tuned.
 
 ```{r}
+#| warning: false
 
 # Create recipe
 rf_rec <- recipe(formula = wldayr ~ ., data = work_loss_train) |>
@@ -258,7 +263,7 @@ show_best(rf_tuning)
 autoplot(rf_tuning)
 ```
 
-The best RMSE is x. This may be a bit higher than expected, but a good metric to have in order to compare it with the elastic net model.
+The best RMSE is 7.68 with a min_n value of 11. This may be a bit higher than ideal, but a good metric to have in order to compare it with the elastic net model.
 
 Finalizing the workflow based on the best hyperparameters:
 
@@ -288,7 +293,7 @@ rf_rmse_plot <- collect_metrics(
   ggplot(mapping = aes(x = id, y = .estimate, group = .metric)) +
   geom_point() +
   geom_line() +
-  theme_void() +
+  theme_minimal() +
   labs(
     title = "RMSE of Random Forests Model Fits Across Folds") +
   xlab("Fold") +
@@ -308,6 +313,7 @@ We used this model as it can work with datasets with a large number of variables
 Elastic net regression requires all variables to be centered and scaled (standardized) before estimation. This way, the coefficients are interpreted in standardized units. To meet this criteria, we created a recipe that removed an ID variables, removed correlated numerical predictors, imputed the mean for any numerical predictors with missing values, hot coded binary variables for categorical ones, removed any predictors with zero variance or near-zero variance. Additionally, we removed missing observations in the outcome variable.
 
 ```{r}
+#| warning: false
 
 # Create recipe
 enet_rec <- recipe(wldayr ~ ., data = work_loss_train) |>
@@ -381,7 +387,7 @@ enet_rmse_plot <- collect_metrics(
   ggplot(mapping = aes(x = id, y = .estimate, group = .metric)) +
   geom_point() +
   geom_line() +
-  theme_void() +
+  theme_minimal() +
   labs(
     title = "RMSE of Elastic Net Regression Model Fits Across Folds") +
   xlab("Fold") +
@@ -402,6 +408,8 @@ bind_rows(
   .id = "model"
 )
 ```
+
+Random forest has a relatively better RMSE compared to the elastic net model. Therefore, we fit the data on the random forest model and create predictions based on the testing data.
 
 ```{r}
 
@@ -452,6 +460,8 @@ kable(model_predictions |>
   count(correct))
 ```
 
+Clearly the model is not perfect. While it did predict more work loss day values correctly than incorrectly, better performance should be achieved before implementation of this model. Some ways to improve the model are explored in the conclusion of this project. At the highest level, adding in additional variables would likely have improved the model or selecting different variables that are better predictors of work loss days.
+
 ### 3.4 Variable Importance
 
 ```{r}
@@ -472,7 +482,11 @@ model_final_fit |>
 
 ```
 
-The most important variable in the model is bedayr, which is the number of days in the past year that a person was in bed for more than half the day. This, of course, makes sense since people who have to work in person cannot go to work if they are bedridden. Another important variable...
+The most important variable in the model is bedayr, which is the number of days in the past year that a person was in bed for more than half the day. This, of course, makes sense since people who have to work in person cannot go to work if they are bedridden. 
+
+The second important variable is one of the dummy encoded variables ("whynowk2") which is a categorical variable that contains information about why someone missed work last week. This makes sense as well, given that if someone missed work previously, they could have done so due to health reasons, which would affect the number of days they missed work. 
+
+BMI is the third most important variable, which is likely a proxy for overall health of the individual. The fourth most important variable is famcare10xno, which is the number of family members who received care 10 or more times in the past year. This is interesting since it's about overall family members instead of individuals, while work loss days is meant to be about taking a day off of work for an individual's health. Lastly, age is the fifth most important predictor - perhaps those of older age take more days off of work because they are more prone to illness and injury.
 
 ## 4. Microsimulation
 
@@ -497,7 +511,7 @@ full_data <- full_data |>
   filter(!wldayr %in% c(996,997, 998, 999))
 ```
 
-### **4.1 Counterfactual**
+### 4.1 Counterfactual
 
 The first simulation represents a counterfactual scenario with broad eligibility, essentially modelling what reimbursement would look like under a policy where all are eligible:
 
@@ -596,7 +610,7 @@ The bar chart above shows the average reimbursement per income level. This is un
 
 We see that people earning between \$0 to \$34999 and \$3500 to \$49999 receive the highest average reimbursement of about \$700. People earning \$100000 and over received the lowest reimbursement of about \$500. Under this policy, lower income groups received higher average reimbursement than higher income, despite equal reimbursement caps. This reflects that lower-income workers had more work loss days.
 
-### **4.2 Adjusted Policy Model**
+### 4.2 Adjusted Policy Model
 
 The second simulation implements a targeted policy with stricter eligibility rules, reflecting a more realistic intervention:
 
@@ -701,7 +715,7 @@ In this case the reimbursements cap is lowered from 12 weeks to 9 weeks. Eligibi
 
 Lower income group still has the high average reimbursement but it is lower than the counterfactual model. This adjusted policy model targets reimbursements towards lower-income individuals by incurring lower total expenditure by the government.
 
-### **4.3 Comparison of Microsimulation Models**
+### 4.3 Comparison of Microsimulation Models
 
 The key difference between the models is in the way we define eligibility and by how much they receive.
 
@@ -710,6 +724,8 @@ The counterfactual model is universal, it includes anyone with any work loss, re
 Both models provide insights into the distributional effects of the policy. While the counterfactual shows the maximum reach of benefits, the adjusted policy model reveals how narrowing eligibility shifts support toward the most disadvantaged but reduces total expenditure.
 
 ```{r}
+#| warning: false
+
 simulated_data_cf$model <- "Counterfactual"
 simulated_data_custom_rate$model <- "Adjusted Policy"
 
@@ -811,17 +827,3 @@ This study has important implications for policymakers in their decision-making 
 When considering which version of a tax credit disbursement policy to implement, policymakers should focus on the broader societal impact, balancing economic efficiency against the need for equitable outcomes. A policy that is highly efficient may not always address the needs of the most vulnerable populations, so equity considerations should be integrated into the decision-making process, ensuring that the benefits of the policy are distributed fairly. Noticeably, the results from the counterfactual microsimulation suggests that people who are part of families with lower levels of income experience more work days missed due to illness and injury. Thus, family leave policies would generally support lower-income individuals and families and could arguably be viewed as a poverty alleviation strategy.
 
 Looking to the future, there are several avenues to further enhance our analysis. With more time and processing power, incorporating a wider range of variables into the predictive model could improve accuracy and offer deeper insights. Additionally, expanding the microsimulation by integrating additional datasets that offer more granular geographic information would enable us to explore the effects of state-level policies on federal policy implementation, helping to better understand the nuances of policy interactions across different levels of government.
-
-## 6. References
-
-Bartel, A. (2023, September 25). Getting the Job Done: How Paid Family Leave Impacts Employers. Columbia Business School. https://business.columbia.edu/research-brief/research-brief/getting-job-done-how-paid-family-leave-impacts-employers
-
-Bartel, A. (2023, September 25). Getting the Job Done: How Paid Family Leave Impacts Employers. Columbia Business School. https://business.columbia.edu/research-brief/research-brief/getting-job-done-how-paid-family-leave-impacts-employers
-
-Davis, J. (2025, April 8). States with paid family leave 2025: Map with employer requirements. Onpay. https://onpay.com/insights/paid-family-leave-by-state/
-
-Paid Family Leave Across OECD Countries. (2022, March 1). Bipartisan Policy Center. https://bipartisanpolicy.org/explainer/paid-family-leave-across-oecd-countries/
-
-Usual Weekly Earnings Summary. (2025, April 16). U.S. Bureau of Labor Statistics. https://www.bls.gov/news.release/wkyeng.nr0.htm
-
-What's on the Table? A Review of Federal Paid Family Leave Proposals. (2025, April 28). Bipartisan Policy Center. https://bipartisanpolicy.org/explainer/whats-on-the-table-a-review-of-federal-paid-family-leave-proposals/
