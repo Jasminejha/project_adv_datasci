@@ -200,7 +200,6 @@ Random Forests is a tree-based model that uses bagging, which is an ensembling m
 
 However, one downside is that random forests is not as easily interpretable compared to other models, such as linear regression that can offer clearer coefficients and directions between the predictors and the outcome variable. It is not easy to understand how the random forest model makes predictions across the dataset and its element of randomness further complicates interpretability.
 
-
 A mtry value of 15 was chosen based on previous model running, which demonstrated that the mtry value did not vary within the top five tuning results. For the sake of faster processing, only min_n was tuned.
 
 ```{r}
@@ -591,17 +590,19 @@ The second simulation implements a targeted policy with stricter eligibility rul
 
 1.  Eligibility:
 
-    -   Individuals must have at least 28 work loss days
+    -   Individuals must have at least 28 work loss days. This proposal would involve requiring employers to pay the first 28 days (4 weeks) of family leave. This would lower the burden and responsibility of the government to pay out the full reimbursement.
 
-    -   Must fall below a specified poverty threshold (poverty index less than 37 or equal to 38).
+    -   Must fall below a specified poverty threshold (families make below 5x the poverty threshold).
 
 2.  Benefit formula:
 
-    -   Eligible individuals with less than or equal to 91 work loss days are reimbursed only for days beyond the 28-day threshold
+    -   Eligible individuals with less than or equal to 91 work loss days are reimbursed only for days beyond the 28-day threshold. 91 work loss days was decided based on the average number of weeks that states provide for personal medical leave under the paid family leave policies.[@statepa2024]
 
-    -   Reimbursement=(work loss days−28)×(reimbursement rate / 7​)
+    -   Reimbursement = (work loss days−28) × (reimbursement rate / 7​)
 
     -   Individuals with greater than 91 work loss days receive a capped reimbursement equal to the rate for 9 weeks.
+
+    -   The same reimbursement rate of \$1194 per week is used as in the counterfactual.
 
 As in the counterfactual, we estimate mean reimbursement and number eligible using survey weights (PERWEIGHT), and visualize results by income level.
 
