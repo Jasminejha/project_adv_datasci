@@ -18,8 +18,7 @@ You can view the full paper and supporting documentation here:
 
 - `index.html` – Main paper page
 - `.gitignore` – Contains raw dataset
-- `fin_proj.qmd` – QMD version of the final report
-- `elast.net.R` – Analysis code for elastic net
+- `fin_proj.qmd` – QMD version of the final report with analysis code
 - `references.bib` – List of references
 
 ## 📝 Description
