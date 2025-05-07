@@ -1,5 +1,5 @@
 ---
-title: "Designing a Tax Credit Policy for Work-Loss Days: A Predictive Modeling and Microsimulation Approach"
+title: "Designing a Tax Credit Policy for Work Loss Days: A Predictive Modeling and Microsimulation Approach"
 subtitle: "PPOL 6819 | Advanced Data Science | Final Project"
 authors: "Jasmine Jha, Stephanie Jamilla, Maleeha Hameed"
 format: html
@@ -8,6 +8,7 @@ embed-resources: true
 editor_options: 
   chunk_output_type: console
 bibliography: references.bib
+toc: true
 ---
 
 ## Preliminaries
@@ -16,13 +17,13 @@ bibliography: references.bib
 
 library(tidyverse)
 library(tidymodels)
-library(ggplot2)
 library(haven)
 library(here)
 library(ipumsr)
 library(janitor)
-library(tictoc)
 library(srvyr)
+library(knitr)
+library(vip)
 ```
 
 ## Executive Summary
@@ -31,13 +32,13 @@ library(srvyr)
 
 ### 1.1 Problem Statement
 
-The United States is the only country in the OECD, and one of only six countries in the world, to not offer national paid parental leave. [@paidfam2022] Currently, 13 states and DC have mandatory paid family leave policies, all of which use social insurance models in which employers and employees pay into the program in order to access wages for leave.[@whatso2025] Discussion about paid family leave typically centers on parental leave, but these state policies also cover personal medical leave, allowing individuals to take care of their own serious health conditions. This is particularly important for individuals with chronic or serious health conditions who have to miss work and have no guarantee that their workplace will offer paid sick leave. Thus, such individuals may not earn any money for missed work days and thus have lower overall earnings compared to healthy individuals.
+The United States is the only country in the OECD, and one of only six countries in the world, to not offer national paid parental leave [@paidfam2022]. Currently, 13 states and DC have mandatory paid family leave policies, all of which use social insurance models in which employers and employees pay into the program in order to access wages for leave [@whatso2025]. Discussion about paid family leave typically centers on parental leave, but these state policies also cover personal medical leave, allowing individuals to take care of their own serious health conditions. This is particularly important for individuals with chronic or serious health conditions who have to miss work and have no guarantee that their workplace will offer paid sick leave. Thus, such individuals may not earn any money for missed work days and thus have lower overall earnings compared to healthy individuals.
 
 ### 1.2 Policy Solution
 
 This project proposes implementing a federal policy that mandates paid family leave, focusing on paid personal medical leave. The policy is based on current state policies--for example, states typically require that employees be granted up to 13 weeks of personal medical leave and have a maximum weekly benefit based on statewide average weekly wages. We create a baseline policy, then make adjustments to the dollar amount eligible employees receive or other components of the policy that determine the total amount transferred to individuals.
 
-A primary concern about family leave policies is that they would adversely affect business productivity or profit as employees would take longer time off. However, a handful of studies on the effects of the policy in California and New York demonstrate that the policy has actually had a positive effect on employee productivity and no significant impact on employee performance.[@bartel2023][@bartel2023a]
+A primary concern about family leave policies is that they would adversely affect business productivity or profit as employees would take longer time off. However, a handful of studies on the effects of the policy in California and New York demonstrate that the policy has actually had a positive effect on employee productivity and no significant impact on employee performance [@bartel2023][@bartel2023a].
 
 ## 2. Empirical Methodology
 
@@ -45,7 +46,7 @@ A primary concern about family leave policies is that they would adversely affec
 
 #### Data Description
 
-We used the 2018 dataset from the National Health Interview Survey, available on the IPUMS website. This dataset includes 72,831 observations and 1,503 variables. We selected the 2018 dataset because it offers a relatively large number of observations alongside a wide range of variables.
+We used the 2018 dataset from the National Health Interview Survey, available on the IPUMS website. This dataset includes 72,831 observations and 1,503 variables. We selected the 2018 dataset because it offers a relatively large number of observations alongside a wide range of variables compared to later (i.e., more recent) years.
 
 The 1503 variables pertained to household and individual level information on demographic characteristics, socioeconomic status, general health status, mortality, specific diseases, health conditions, health behaviours, health education, medical care and access, health insurance, mental health, vaccinations history, alternative health, and social determinants of health.
 
@@ -55,7 +56,7 @@ The 1503 variables pertained to household and individual level information on de
 #| warning: false
 #| message: false
 
-ddi <- read_ipums_ddi("data/nhis_00004.xml")
+ddi <- read_ipums_ddi(here("data", "nhis_00004.xml"))
 full_data <- read_ipums_micro(ddi)
 ```
 
@@ -118,9 +119,6 @@ list <- (colnames(vars))
 ## Iterating the function over each categorical variable
 work_loss <- make_factor(variable = list)
 
-## Checking to see if variable type is correct (most variables should be <fct> type now)
-glimpse(work_loss)
-
 ```
 
 1.  **Standardization of variable names:** We standardized all variable names to ensure consistency and facilitate downstream processing. This involved converting all names to lowercase and replacing spaces and special characters with underscores. These modifications improved both readability and compatibility with data manipulation functions.
@@ -134,11 +132,11 @@ glimpse(work_loss)
 
     This streamlined selection was guided by theory and relevance to the research question.
 
-3.  **Recoding special and missing values:** We cleaned the data by identifying and recoding special response codes that represented missing or invalid data. For example, values such as 98, 99, and 997--999 were treated as missing, while specific codes like 996 (indicating "none" or "zero") were recoded to 0. This step ensured that all numeric fields reflected interpretable and analyzable values. Additionally, this step ensured numerical consistency and prevented skewed analysis due to placeholder codes.
+3.  **Recoding special and missing values:** We cleaned the data by identifying and recoding special response codes that represented missing or invalid data in numeric variables. For example, values such as 98, 99, and 997--999 were treated as missing, while specific codes like 996 (indicating "none" or "zero") were recoded to 0. This step ensured that all numeric fields reflected interpretable and analyzable values. Additionally, this step ensured numerical consistency and prevented skewed analysis due to placeholder codes.
 
-4.  **Conversion of categorical variables:** We converted all applicable non-numeric variables to categorical format to support appropriate statistical analysis and visualization. This included responses related to employment status, education, language, and benefit receipt. This step was essential for accurate modeling and visualization, particularly for tree-based and regularized regression models.
+4.  **Conversion of categorical variables:** While many of the variables are categorical in nature, they were coded to be numeric in the NHIS. Thus, we transformed these erroneously numeric variables to factor so that they can be manipulated for dummy encoding later for the predictive models. This included responses related to employment status, education, language, and benefit receipt. This step was essential for accurate modeling and visualization, particularly for tree-based and regularized regression models.
 
-5.  **Identification of the outcome variable:** Our primary outcome variable is **`wldayr`**, representing the number of work-loss days in the past 12 months.
+5.  **Identification of the outcome variable:** Our primary outcome variable is **`wldayr`**, representing the number of work loss days in the past 12 months. This was chosen as the outcome variable because such a model could help policymakers understand the prevalence of how injury and illness are affecting their constituency’s ability to go to work and get a sense of how a proposed family leave policy (with a focus on personal medical leave) would affect their constituency.
 
 ### 2.2 Approaches
 
@@ -146,7 +144,7 @@ We use two complementary machine learning approaches to explore the policy quest
 
 #### Predictive Modeling
 
-The first part of the project focuses on developing two predictive models to estimate the number of work-loss days an individual may experience, using features such as demographics, health history, insurance coverage, and other socioeconomic factors. These models aim to help policymakers understand how illness and injury impact labor force participation, thereby informing the design of targeted policy interventions.
+The first part of the project focuses on developing two predictive models to estimate the number of work loss days an individual may experience, using features such as demographics, health history, insurance coverage, and other socioeconomic factors. These models aim to help policymakers understand how illness and injury impact labor force participation, thereby informing the design of targeted policy interventions.
 
 We employ two modeling techniques---random forests (a tree-based ensemble method) and elastic net regression (a regularized linear model that balances L1 and L2 penalties). These methods were chosen for their complementary strengths: random forests are capable of capturing nonlinear interactions and complex variable relationships, while elastic net regression offers interpretability and variable selection in high-dimensional settings. We compare their performance to identify the most effective and interpretable model for informing policy design. Additional methodological details are provided in Section 3.1.
 
@@ -154,17 +152,17 @@ We employ two modeling techniques---random forests (a tree-based ensemble method
 
 The second part of the project involves the creation of a microsimulation using a built-in microsimulation calculator to implement a proposed tax credit or cash transfer policy.
 
-We begin by defining the policy parameters, including how the tax credit amount is determined based on the number of work-loss days, household income, number of children, and other relevant factors. The microsimulation allows us to estimate the impact of the policy at the individual and household level, simulating outcomes under different eligibility rules and benefit structures.
+We begin by defining the policy parameters based on existing state family leave policies and proposed federal policies. The microsimulation allows us to estimate the impact of the policy at the individual and household level, simulating outcomes under different eligibility rules and benefit structures.
 
-In the third step, we systematically vary key parameters of the policy to assess the distributional effects of these changes. This sensitivity analysis helps identify equity concerns and possible unintended consequences such as employers reducing paid sick leave offerings in response to the new government provision. To contextualize these concerns, we draw on existing literature from the U.S. and other countries regarding employer responses to publicly funded sick leave programs.
+In the third step, we systematically vary key parameters of the policy to assess the distributional effects of these changes. This sensitivity analysis helps identify equity concerns and possible unintended consequences such as employers reducing paid sick leave offerings in response to the new government provision.
 
 ### 2.3 Limitations
 
--   **Arbitrary variable selection:** We reduced the raw dataset to 104 variables based on a combination of intuition and theoretical considerations, excluding variables that were repetitive, imputed, or had excessive missing values. While a more principled, data-driven variable selection approach may have enhanced the predictive performance and accuracy of our microsimulation models, the full set of 1,503 variables was too unwieldy for the methods employed in this project.
+-   **Variable selection:** We reduced the raw dataset to 104 variables based on a combination of intuition and theoretical considerations, excluding variables that were repetitive, imputed, or had excessive missing values. While a more principled, data-driven variable selection approach may have enhanced the predictive performance and accuracy of our microsimulation models, the full set of 1,503 variables was too unwieldy for the methods employed in this project.
 
 -   **Limited number of predictive models:** Although we would have preferred to explore a broader set of predictive models, such as XGBoost or Generalized Additive Models (GAMs), and experiment with hyperparameter tuning, computational constraints limited our ability to do so. These models, while potentially more powerful, were too resource-intensive given our available infrastructure.
 
--   **Lack of geographical data:** Incorporating geographic data would have enabled us to distinguish between state and federal policy effects in our microsimulation calculator, providing a more nuanced understanding of policy implementation. Unfortunately, the absence of such data restricted our ability to analyze these geographic variations.
+-   **Lack of geographical data:** Incorporating detailed geographic data would have enabled us to distinguish between state and federal policy effects in our microsimulation calculator, providing a more nuanced understanding of policy implementation. Unfortunately, the absence of such data restricted our ability to analyze these geographic variations. There was extremely broad geographic information that identified if a household is in the "northeast," "north central/midwest," "south," or "west." However, this was not a useful variable as we would not be able to understand how state and federal policies could interact or affect each other. Therefore for the microsimulation, we assume that state policies are not relevant to the distribution of funds.
 
 ## 3. Predictive Modelling
 
@@ -199,17 +197,24 @@ Random Forests is a tree-based model that uses bagging, which is an ensembling m
 
 However, one downside is that random forests is not as easily interpretable compared to other models, such as linear regression that can offer clearer coefficients and directions between the predictors and the outcome variable. It is not easy to understand how the random forest model makes predictions across the dataset and its element of randomness further complicates interpretability.
 
+A mtry value of 15 was chosen based on previous model running, which demonstrated that the mtry value did not vary within the top five tuning results. For the sake of faster processing, only min_n was tuned.
+
 ```{r}
 
 # Create recipe
 rf_rec <- recipe(formula = wldayr ~ ., data = work_loss_train) |>
   update_role(c(nhispid), new_role = "id") |>
-  step_dummy(all_factor_predictors()) |>
   step_rm(has_role("id")) |>
+  step_dummy(all_factor_predictors()) |>
   step_zv(all_predictors()) |>
   step_corr(all_numeric_predictors()) |>
   step_impute_mean(all_numeric_predictors()) |>
   step_naomit(wldayr)
+
+# Baking to check number of observations and variables
+data_prepped_rf <- rf_rec |>
+  prep() |>
+  bake(new_data = NULL)
 
 # Create model
 rf_mod <- rand_forest(
@@ -232,7 +237,6 @@ rf_wf <- workflow() |>
 # Create grid
 rf_grid <- grid_regular(
   min_n(range = c(1, 15)),
-  mtry(range = c(1, 15)),
   levels = 5
 )
 
@@ -244,7 +248,7 @@ rf_tuning <- tune_grid(
 )
 
 # Show best tuning results
-show_best(rf_resamples)
+show_best(rf_tuning)
 
 ```
 
@@ -253,6 +257,10 @@ show_best(rf_resamples)
 # Visualize tuning results
 autoplot(rf_tuning)
 ```
+
+The best RMSE is x. This may be a bit higher than expected, but a good metric to have in order to compare it with the elastic net model.
+
+Finalizing the workflow based on the best hyperparameters:
 
 ```{r}
 
@@ -403,7 +411,7 @@ model_best <- rf_resamples |>
 
 # Finalize the workflow with finalize_workflow
 model_final <- finalize_workflow(
-  rf_workflow,                                   
+  rf_tuned_wf,                                   
   parameters = model_best
 )
 
@@ -428,7 +436,7 @@ model_predictions <- bind_cols(
 )
 
 # Display the first 10 predictions against the actual values
-kable(select(model_predictions, wldayr, starts_with(".pred")))
+select(model_predictions, wldayr, starts_with(".pred"))
 ```
 
 ```{r}
@@ -450,11 +458,21 @@ kable(model_predictions |>
 
 model_final_fit |>
   extract_fit_parsnip() |>
-  vip(num_features = 20) +
+  vip(num_features = 20) %>%
+  .$data |>
+  mutate(
+    Importance = Importance / max(Importance),
+    Variable = fct_reorder(.x = Importance, .f = Variable)
+  ) |>
+  ggplot(aes(Importance, Variable)) +
+  geom_col() +
   labs(title = "Top Predictors in Best Performing Model") +
   ylab("Importance") +
   xlab("Variable")
+
 ```
+
+The most important variable in the model is bedayr, which is the number of days in the past year that a person was in bed for more than half the day. This, of course, makes sense since people who have to work in person cannot go to work if they are bedridden. Another important variable...
 
 ## 4. Microsimulation
 
@@ -487,16 +505,28 @@ The first simulation represents a counterfactual scenario with broad eligibility
 
 2.  Benefit formula:
 
-    -   Individuals with less than or equal to 84 work loss days receive a reimbursement proportional to their number of lost days:
+    -   Individuals with less than or equal to 84 work loss days receive a reimbursement proportional to their number of lost days. This reflects the FAMILY Act, which is a Democratic party-backed proposal that has been introduced in Congress most recently in 2023-24. If passed, it would provide 12 weeks of paid family leave [@whatso2025].
 
     -   Reimbursement equals the number of work loss days multiplied by the weekly reimbursement rate divided by 7.
 
     -   Individuals with greater than 84 work loss days receive a capped reimbursement equal to the full rate for 12 weeks.
 
+    -   The national median weekly earnings level of full-time wage and salary workers Q1 of 2025 were used as the weekly reimbursement rate. This results in a weekly reimbursement rate of \$1194 [@usualwe2025]. This reflects how current state policies determine the maximum weekly benefit based on statewide average wages [@statepa2024a]. Using the U.S. Bureau of Labor Statistics median rate gives us a comparable way to simulate what reimbursements could look like at the national level.
+
 This simulation calculates reimbursement amounts for every individual, regardless of income or poverty status, and uses survey weights (PERWEIGHT) to estimate the mean reimbursement and the total eligible population.
 
 ```{r}
-simulate_reimbursement_cf <- function(wldayr, poverty, perweight, reimbursement_rate, num_weeks) {
+#' Baseline/Counterfactual Family Leave Policy Calculator 
+#'
+#' @param wldayr A numeric value for number of days missed work due to illness
+#' @param perweight A numeric value for the survey weight
+#' @param reimbursement_rate A numeric value for the weekly reimbursement rate
+#' @param num_weeks A numeric value for the max number of weeks reimbursed
+#'
+#' @return A dataframe
+#'
+
+simulate_reimbursement_cf <- function(wldayr, perweight, reimbursement_rate, num_weeks) {
   
   eligible <- (wldayr > 0)
   
@@ -521,7 +551,6 @@ simulate_reimbursement_cf <- function(wldayr, poverty, perweight, reimbursement_
 ```{r}
 simulated_data_cf <- simulate_reimbursement_cf(
   wldayr = full_data$wldayr,
-  poverty = full_data$poverty,
   perweight = full_data$perweight,
   reimbursement_rate = 1194,
   num_weeks = 12
@@ -565,7 +594,7 @@ simulated_data_cf |>
 
 The bar chart above shows the average reimbursement per income level. This is under the simulated counter-factual reimbursement model.
 
-We see that people earning between \$0 to \$34999 and \$3500 to \$49999 receive the highest average reimbursement of about \$700. People earning \$100000 and over received the lowest reimbursement of about \$500. Under this policy, lower income groups received higher average reimbursement than higher income, despite equal reimbursement caps. This reflects that lower-income workers had more work-loss days.
+We see that people earning between \$0 to \$34999 and \$3500 to \$49999 receive the highest average reimbursement of about \$700. People earning \$100000 and over received the lowest reimbursement of about \$500. Under this policy, lower income groups received higher average reimbursement than higher income, despite equal reimbursement caps. This reflects that lower-income workers had more work loss days.
 
 ### **4.2 Adjusted Policy Model**
 
@@ -573,21 +602,35 @@ The second simulation implements a targeted policy with stricter eligibility rul
 
 1.  Eligibility:
 
-    -   Individuals must have at least 28 work loss days
+    -   Individuals must have at least 28 work loss days. This proposal would involve requiring employers to pay the first 28 days (4 weeks) of family leave. This would lower the burden and responsibility of the government to pay out the full reimbursement.
 
-    -   Must fall below a specified poverty threshold (poverty index less than 37 or equal to 38).
+    -   Must fall below a specified poverty threshold (families make below 5x the poverty threshold).
 
 2.  Benefit formula:
 
-    -   Eligible individuals with less than or equal to 91 work loss days are reimbursed only for days beyond the 28-day threshold
+    -   Eligible individuals with less than or equal to 91 work loss days are reimbursed only for days beyond the 28-day threshold. 91 work loss days was decided based on the average number of weeks that states provide for personal medical leave under the paid family leave policies [@statepa2024].
 
-    -   Reimbursement=(work loss days−28)×(reimbursement rate / 7​)
+    -   Reimbursement = (work loss days−28) × (reimbursement rate / 7​)
 
     -   Individuals with greater than 91 work loss days receive a capped reimbursement equal to the rate for 9 weeks.
+
+    -   The same reimbursement rate of \$1194 per week is used as in the counterfactual.
 
 As in the counterfactual, we estimate mean reimbursement and number eligible using survey weights (PERWEIGHT), and visualize results by income level.
 
 ```{r}
+
+#' Alternative Family Leave Policy Calculator 
+#'
+#' @param wldayr A numeric value for number of days missed work due to illness
+#' @param poverty A numeric value that indicates a family's income to poverty threshold ratio
+#' @param perweight A numeric value for the survey weight
+#' @param reimbursement_rate A numeric value for the weekly reimbursement rate
+#' @param num_weeks A numeric value for the max number of weeks reimbursed
+#'
+#' @return A dataframe
+#'
+
 simulate_reimbursement <- function(wldayr, poverty, perweight, reimbursement_rate, num_weeks) {
   eligible <- (wldayr > 28 & (poverty < 37 | poverty == 38))  
   
@@ -765,7 +808,7 @@ ggplot(comparison_data1, aes(x = income, y = mean_reimbursement, fill = model)) 
 
 This study has important implications for policymakers in their decision-making process regarding predictive model selection and policy implementation. Policymakers must weigh factors such as the computational power and interpretability of different predictive models. For example, selecting a more sophisticated model may provide greater accuracy, but it could be more computationally intensive, requiring trade-offs between resource allocation and predictive precision.
 
-When considering which version of a tax credit disbursement policy to implement, policymakers should focus on the broader societal impact, balancing economic efficiency against the need for equitable outcomes. A policy that is highly efficient may not always address the needs of the most vulnerable populations, so equity considerations should be integrated into the decision-making process, ensuring that the benefits of the policy are distributed fairly.
+When considering which version of a tax credit disbursement policy to implement, policymakers should focus on the broader societal impact, balancing economic efficiency against the need for equitable outcomes. A policy that is highly efficient may not always address the needs of the most vulnerable populations, so equity considerations should be integrated into the decision-making process, ensuring that the benefits of the policy are distributed fairly. Noticeably, the results from the counterfactual microsimulation suggests that people who are part of families with lower levels of income experience more work days missed due to illness and injury. Thus, family leave policies would generally support lower-income individuals and families and could arguably be viewed as a poverty alleviation strategy.
 
 Looking to the future, there are several avenues to further enhance our analysis. With more time and processing power, incorporating a wider range of variables into the predictive model could improve accuracy and offer deeper insights. Additionally, expanding the microsimulation by integrating additional datasets that offer more granular geographic information would enable us to explore the effects of state-level policies on federal policy implementation, helping to better understand the nuances of policy interactions across different levels of government.
 
