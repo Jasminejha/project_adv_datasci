@@ -1,5 +1,3 @@
-# project_adv_datasci
-
 # Final Project: Designing a Tax Credit Policy for Work Loss Days: A Predictive Modeling and Microsimulation Approach
 
 Authors: Jasmine Jha, Stephanie Jamilla, Maleeha Hameed
