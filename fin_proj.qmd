@@ -119,9 +119,6 @@ list <- (colnames(vars))
 ## Iterating the function over each categorical variable
 work_loss <- make_factor(variable = list)
 
-## Checking to see if variable type is correct (most variables should be <fct> type now)
-glimpse(work_loss)
-
 ```
 
 1.  **Standardization of variable names:** We standardized all variable names to ensure consistency and facilitate downstream processing. This involved converting all names to lowercase and replacing spaces and special characters with underscores. These modifications improved both readability and compatibility with data manipulation functions.
@@ -521,12 +518,14 @@ This simulation calculates reimbursement amounts for every individual, regardles
 #' Baseline/Counterfactual Family Leave Policy Calculator 
 #'
 #' @param wldayr A numeric value for number of days missed work due to illness
-#' @param  A numeric value for the denominator
+#' @param perweight A numeric value for the survey weight
+#' @param reimbursement_rate A numeric value for the weekly reimbursement rate
+#' @param num_weeks A numeric value for the max number of weeks reimbursed
 #'
-#' @return A numeric ratio
+#' @return A dataframe
 #'
 
-simulate_reimbursement_cf <- function(wldayr, poverty, perweight, reimbursement_rate, num_weeks) {
+simulate_reimbursement_cf <- function(wldayr, perweight, reimbursement_rate, num_weeks) {
   
   eligible <- (wldayr > 0)
   
@@ -551,7 +550,6 @@ simulate_reimbursement_cf <- function(wldayr, poverty, perweight, reimbursement_
 ```{r}
 simulated_data_cf <- simulate_reimbursement_cf(
   wldayr = full_data$wldayr,
-  poverty = full_data$poverty,
   perweight = full_data$perweight,
   reimbursement_rate = 1194,
   num_weeks = 12
@@ -620,6 +618,18 @@ The second simulation implements a targeted policy with stricter eligibility rul
 As in the counterfactual, we estimate mean reimbursement and number eligible using survey weights (PERWEIGHT), and visualize results by income level.
 
 ```{r}
+
+#' Alternative Family Leave Policy Calculator 
+#'
+#' @param wldayr A numeric value for number of days missed work due to illness
+#' @param poverty A numeric value that indicates a family's income to poverty threshold ratio
+#' @param perweight A numeric value for the survey weight
+#' @param reimbursement_rate A numeric value for the weekly reimbursement rate
+#' @param num_weeks A numeric value for the max number of weeks reimbursed
+#'
+#' @return A dataframe
+#'
+
 simulate_reimbursement <- function(wldayr, poverty, perweight, reimbursement_rate, num_weeks) {
   eligible <- (wldayr > 28 & (poverty < 37 | poverty == 38))  
   
