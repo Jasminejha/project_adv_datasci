@@ -161,11 +161,11 @@ In the third step, we systematically vary key parameters of the policy to assess
 
 ### 2.3 Limitations
 
--   **Arbitrary variable selection:** We reduced the raw dataset to 104 variables based on a combination of intuition and theoretical considerations, excluding variables that were repetitive, imputed, or had excessive missing values. While a more principled, data-driven variable selection approach may have enhanced the predictive performance and accuracy of our microsimulation models, the full set of 1,503 variables was too unwieldy for the methods employed in this project.
+-   **Variable selection:** We reduced the raw dataset to 104 variables based on a combination of intuition and theoretical considerations, excluding variables that were repetitive, imputed, or had excessive missing values. While a more principled, data-driven variable selection approach may have enhanced the predictive performance and accuracy of our microsimulation models, the full set of 1,503 variables was too unwieldy for the methods employed in this project.
 
 -   **Limited number of predictive models:** Although we would have preferred to explore a broader set of predictive models, such as XGBoost or Generalized Additive Models (GAMs), and experiment with hyperparameter tuning, computational constraints limited our ability to do so. These models, while potentially more powerful, were too resource-intensive given our available infrastructure.
 
--   **Lack of geographical data:** Incorporating geographic data would have enabled us to distinguish between state and federal policy effects in our microsimulation calculator, providing a more nuanced understanding of policy implementation. Unfortunately, the absence of such data restricted our ability to analyze these geographic variations.
+-   **Lack of geographical data:** Incorporating detailed geographic data would have enabled us to distinguish between state and federal policy effects in our microsimulation calculator, providing a more nuanced understanding of policy implementation. Unfortunately, the absence of such data restricted our ability to analyze these geographic variations. There was extremely broad geographic information that identified if a household is in the "northeast," "north central/midwest," "south," or "west." However, this was not a useful variable as we would not be able to understand how state and federal policies could interact or affect each other. Therefore for the microsimulation, we assume that state policies are not relevant to the distribution of funds.
 
 ## 3. Predictive Modelling
 
