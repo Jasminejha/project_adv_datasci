@@ -1,5 +1,5 @@
 ---
-title: "Designing a Tax Credit Policy for Work-Loss Days: A Predictive Modeling and Microsimulation Approach"
+title: "Designing a Tax Credit Policy for Work Loss Days: A Predictive Modeling and Microsimulation Approach"
 subtitle: "PPOL 6819 | Advanced Data Science | Final Project"
 authors: "Jasmine Jha, Stephanie Jamilla, Maleeha Hameed"
 format: html
@@ -17,7 +17,6 @@ toc: true
 
 library(tidyverse)
 library(tidymodels)
-library(ggplot2)
 library(haven)
 library(here)
 library(ipumsr)
@@ -57,7 +56,7 @@ The 1503 variables pertained to household and individual level information on de
 #| warning: false
 #| message: false
 
-ddi <- read_ipums_ddi("data/nhis_00004.xml")
+ddi <- read_ipums_ddi(here("data", "nhis_00004.xml"))
 full_data <- read_ipums_micro(ddi)
 ```
 
@@ -140,7 +139,7 @@ glimpse(work_loss)
 
 4.  **Conversion of categorical variables:** While many of the variables are categorical in nature, they were coded to be numeric in the NHIS. Thus, we transformed these erroneously numeric variables to factor so that they can be manipulated for dummy encoding later for the predictive models. This included responses related to employment status, education, language, and benefit receipt. This step was essential for accurate modeling and visualization, particularly for tree-based and regularized regression models.
 
-5.  **Identification of the outcome variable:** Our primary outcome variable is **`wldayr`**, representing the number of work-loss days in the past 12 months. This was chosen as the outcome variable becausesuch a model could help policymakers understand the prevalence of how injury and illness are affecting their constituency’s ability to go to work and get a sense of how a proposed family leave policy (with a focus on personal medical leave) would affect their constituency.
+5.  **Identification of the outcome variable:** Our primary outcome variable is **`wldayr`**, representing the number of work loss days in the past 12 months. This was chosen as the outcome variable because such a model could help policymakers understand the prevalence of how injury and illness are affecting their constituency’s ability to go to work and get a sense of how a proposed family leave policy (with a focus on personal medical leave) would affect their constituency.
 
 ### 2.2 Approaches
 
@@ -148,7 +147,7 @@ We use two complementary machine learning approaches to explore the policy quest
 
 #### Predictive Modeling
 
-The first part of the project focuses on developing two predictive models to estimate the number of work-loss days an individual may experience, using features such as demographics, health history, insurance coverage, and other socioeconomic factors. These models aim to help policymakers understand how illness and injury impact labor force participation, thereby informing the design of targeted policy interventions.
+The first part of the project focuses on developing two predictive models to estimate the number of work loss days an individual may experience, using features such as demographics, health history, insurance coverage, and other socioeconomic factors. These models aim to help policymakers understand how illness and injury impact labor force participation, thereby informing the design of targeted policy interventions.
 
 We employ two modeling techniques---random forests (a tree-based ensemble method) and elastic net regression (a regularized linear model that balances L1 and L2 penalties). These methods were chosen for their complementary strengths: random forests are capable of capturing nonlinear interactions and complex variable relationships, while elastic net regression offers interpretability and variable selection in high-dimensional settings. We compare their performance to identify the most effective and interpretable model for informing policy design. Additional methodological details are provided in Section 3.1.
 
@@ -406,8 +405,6 @@ bind_rows(
 )
 ```
 
-Random forest has a relatively better RMSE compared to the elastic net model. Therefore, we fit the data on the random forest model and create predictions based on the testing data. 
-
 ```{r}
 
 # Select the best resamples via select_best
@@ -416,7 +413,7 @@ model_best <- rf_resamples |>
 
 # Finalize the workflow with finalize_workflow
 model_final <- finalize_workflow(
-  rf_workflow,                                   
+  rf_tuned_wf,                                   
   parameters = model_best
 )
 
@@ -426,7 +423,7 @@ model_final_fit <-
   last_fit(work_loss_split) 
 
 # Collect metrics for RMSE
-knitr::kable(model_final_fit |>
+kable(model_final_fit |>
   collect_metrics() |>
   filter(.metric == "rmse"))
 ```
@@ -441,7 +438,7 @@ model_predictions <- bind_cols(
 )
 
 # Display the first 10 predictions against the actual values
-knitr::kable(select(model_predictions, wldayr, starts_with(".pred")))
+select(model_predictions, wldayr, starts_with(".pred"))
 ```
 
 ```{r}
@@ -456,8 +453,6 @@ kable(model_predictions |>
          )) |>
   count(correct))
 ```
-
-Clearly the model is not perfect. While it did predict more work loss day values correctly than incorrectly, better performance should be achieved before implementation of this model. Some ways to improve the model are explored in the conclusion of this project. At the highest level, adding in additional variables would likely have improved the model or selecting different variables that are better predictors of work loss days.
 
 ### 3.4 Variable Importance
 
@@ -523,6 +518,14 @@ The first simulation represents a counterfactual scenario with broad eligibility
 This simulation calculates reimbursement amounts for every individual, regardless of income or poverty status, and uses survey weights (PERWEIGHT) to estimate the mean reimbursement and the total eligible population.
 
 ```{r}
+#' Baseline/Counterfactual Family Leave Policy Calculator 
+#'
+#' @param wldayr A numeric value for number of days missed work due to illness
+#' @param  A numeric value for the denominator
+#'
+#' @return A numeric ratio
+#'
+
 simulate_reimbursement_cf <- function(wldayr, poverty, perweight, reimbursement_rate, num_weeks) {
   
   eligible <- (wldayr > 0)
@@ -592,7 +595,7 @@ simulated_data_cf |>
 
 The bar chart above shows the average reimbursement per income level. This is under the simulated counter-factual reimbursement model.
 
-We see that people earning between \$0 to \$34999 and \$3500 to \$49999 receive the highest average reimbursement of about \$700. People earning \$100000 and over received the lowest reimbursement of about \$500. Under this policy, lower income groups received higher average reimbursement than higher income, despite equal reimbursement caps. This reflects that lower-income workers had more work-loss days.
+We see that people earning between \$0 to \$34999 and \$3500 to \$49999 receive the highest average reimbursement of about \$700. People earning \$100000 and over received the lowest reimbursement of about \$500. Under this policy, lower income groups received higher average reimbursement than higher income, despite equal reimbursement caps. This reflects that lower-income workers had more work loss days.
 
 ### **4.2 Adjusted Policy Model**
 
