@@ -482,9 +482,9 @@ model_final_fit |>
 
 ```
 
-The most important variable in the model is bedayr, which is the number of days in the past year that a person was in bed for more than half the day. This, of course, makes sense since people who have to work in person cannot go to work if they are bedridden. 
+The most important variable in the model is bedayr, which is the number of days in the past year that a person was in bed for more than half the day. This, of course, makes sense since people who have to work in person cannot go to work if they are bedridden.
 
-The second important variable is one of the dummy encoded variables ("whynowk2") which is a categorical variable that contains information about why someone missed work last week. This makes sense as well, given that if someone missed work previously, they could have done so due to health reasons, which would affect the number of days they missed work. 
+The second important variable is one of the dummy encoded variables ("whynowk2") which is a categorical variable that contains information about why someone missed work last week. This makes sense as well, given that if someone missed work previously, they could have done so due to health reasons, which would affect the number of days they missed work.
 
 BMI is the third most important variable, which is likely a proxy for overall health of the individual. The fourth most important variable is famcare10xno, which is the number of family members who received care 10 or more times in the past year. This is interesting since it's about overall family members instead of individuals, while work loss days is meant to be about taking a day off of work for an individual's health. Lastly, age is the fifth most important predictor - perhaps those of older age take more days off of work because they are more prone to illness and injury.
 
@@ -525,7 +525,7 @@ The first simulation represents a counterfactual scenario with broad eligibility
 
     -   Individuals with greater than 84 work loss days receive a capped reimbursement equal to the full rate for 12 weeks.
 
-    -   The national median weekly earnings level of full-time wage and salary workers Q1 of 2025 were used as the weekly reimbursement rate. This results in a weekly reimbursement rate of \$1194 [@usualwe2025]. This reflects how current state policies determine the maximum weekly benefit based on statewide average wages [@statepa2024a]. Using the U.S. Bureau of Labor Statistics median rate gives us a comparable way to simulate what reimbursements could look like at the national level.
+    -   The national median weekly earnings level of full-time wage and salary workers Q1 of 2025 were used as the weekly reimbursement rate. This results in a weekly reimbursement rate of \$1194 @usualwe2025. This reflects how current state policies determine the maximum weekly benefit based on statewide average wages [@whatso2025a]. Using the U.S. Bureau of Labor Statistics median rate gives us a comparable way to simulate what reimbursements could look like at the national level.
 
 This simulation calculates reimbursement amounts for every individual, regardless of income or poverty status, and uses survey weights (PERWEIGHT) to estimate the mean reimbursement and the total eligible population.
 
