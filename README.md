@@ -10,9 +10,7 @@ Welcome to the final project for PPOL 6819 Advanced Data Science. This repositor
 
 You can view the full paper and supporting documentation here:
 
-[PLEASE UPDATE THE LINK BELOW]
-
-[https://your-username.github.io/your-repo-name/](https://your-username.github.io/your-repo-name/)
+[https://jasminejha.github.io/project_adv_datasci/](https://jasminejha.github.io/project_adv_datasci/)
 
 ## 📂 Project Contents
 
