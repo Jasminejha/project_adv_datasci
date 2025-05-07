@@ -32,13 +32,13 @@ library(vip)
 
 ### 1.1 Problem Statement
 
-The United States is the only country in the OECD, and one of only six countries in the world, to not offer national paid parental leave. [@paidfam2022] Currently, 13 states and DC have mandatory paid family leave policies, all of which use social insurance models in which employers and employees pay into the program in order to access wages for leave.[@whatso2025] Discussion about paid family leave typically centers on parental leave, but these state policies also cover personal medical leave, allowing individuals to take care of their own serious health conditions. This is particularly important for individuals with chronic or serious health conditions who have to miss work and have no guarantee that their workplace will offer paid sick leave. Thus, such individuals may not earn any money for missed work days and thus have lower overall earnings compared to healthy individuals.
+The United States is the only country in the OECD, and one of only six countries in the world, to not offer national paid parental leave [@paidfam2022]. Currently, 13 states and DC have mandatory paid family leave policies, all of which use social insurance models in which employers and employees pay into the program in order to access wages for leave [@whatso2025]. Discussion about paid family leave typically centers on parental leave, but these state policies also cover personal medical leave, allowing individuals to take care of their own serious health conditions. This is particularly important for individuals with chronic or serious health conditions who have to miss work and have no guarantee that their workplace will offer paid sick leave. Thus, such individuals may not earn any money for missed work days and thus have lower overall earnings compared to healthy individuals.
 
 ### 1.2 Policy Solution
 
 This project proposes implementing a federal policy that mandates paid family leave, focusing on paid personal medical leave. The policy is based on current state policies--for example, states typically require that employees be granted up to 13 weeks of personal medical leave and have a maximum weekly benefit based on statewide average weekly wages. We create a baseline policy, then make adjustments to the dollar amount eligible employees receive or other components of the policy that determine the total amount transferred to individuals.
 
-A primary concern about family leave policies is that they would adversely affect business productivity or profit as employees would take longer time off. However, a handful of studies on the effects of the policy in California and New York demonstrate that the policy has actually had a positive effect on employee productivity and no significant impact on employee performance.[@bartel2023][@bartel2023a]
+A primary concern about family leave policies is that they would adversely affect business productivity or profit as employees would take longer time off. However, a handful of studies on the effects of the policy in California and New York demonstrate that the policy has actually had a positive effect on employee productivity and no significant impact on employee performance [@bartel2023][@bartel2023a].
 
 ## 2. Empirical Methodology
 
@@ -154,7 +154,7 @@ The second part of the project involves the creation of a microsimulation using 
 
 We begin by defining the policy parameters based on existing state family leave policies and proposed federal policies. The microsimulation allows us to estimate the impact of the policy at the individual and household level, simulating outcomes under different eligibility rules and benefit structures.
 
-In the third step, we systematically vary key parameters of the policy to assess the distributional effects of these changes. This sensitivity analysis helps identify equity concerns and possible unintended consequences such as employers reducing paid sick leave offerings in response to the new government provision. 
+In the third step, we systematically vary key parameters of the policy to assess the distributional effects of these changes. This sensitivity analysis helps identify equity concerns and possible unintended consequences such as employers reducing paid sick leave offerings in response to the new government provision.
 
 ### 2.3 Limitations
 
@@ -261,6 +261,7 @@ autoplot(rf_tuning)
 The best RMSE is x. This may be a bit higher than expected, but a good metric to have in order to compare it with the elastic net model.
 
 Finalizing the workflow based on the best hyperparameters:
+
 ```{r}
 
 # Finalize workflow
@@ -504,13 +505,13 @@ The first simulation represents a counterfactual scenario with broad eligibility
 
 2.  Benefit formula:
 
-    -   Individuals with less than or equal to 84 work loss days receive a reimbursement proportional to their number of lost days. This reflects the FAMILY Act, which is a Democratic party-backed proposal that has been introduced in Congress most recently in 2023-24. If passed, it would provide 12 weeks of paid family leave.[@whatso2025]
+    -   Individuals with less than or equal to 84 work loss days receive a reimbursement proportional to their number of lost days. This reflects the FAMILY Act, which is a Democratic party-backed proposal that has been introduced in Congress most recently in 2023-24. If passed, it would provide 12 weeks of paid family leave [@whatso2025].
 
     -   Reimbursement equals the number of work loss days multiplied by the weekly reimbursement rate divided by 7.
 
     -   Individuals with greater than 84 work loss days receive a capped reimbursement equal to the full rate for 12 weeks.
 
-    -   The national median weekly earnings level of full-time wage and salary workers Q1 of 2025 were used as the weekly reimbursement rate. This results in a weekly reimbursement rate of \$1194.[@usualwe2025] This reflects how current state policies determine the maximum weekly benefit based on statewide average wages.[@statepa2024a] Using the U.S. Bureau of Labor Statistics median rate gives us a comparable way to simulate what reimbursements could look like at the national level.
+    -   The national median weekly earnings level of full-time wage and salary workers Q1 of 2025 were used as the weekly reimbursement rate. This results in a weekly reimbursement rate of \$1194 [@usualwe2025]. This reflects how current state policies determine the maximum weekly benefit based on statewide average wages [@statepa2024a]. Using the U.S. Bureau of Labor Statistics median rate gives us a comparable way to simulate what reimbursements could look like at the national level.
 
 This simulation calculates reimbursement amounts for every individual, regardless of income or poverty status, and uses survey weights (PERWEIGHT) to estimate the mean reimbursement and the total eligible population.
 
@@ -607,7 +608,7 @@ The second simulation implements a targeted policy with stricter eligibility rul
 
 2.  Benefit formula:
 
-    -   Eligible individuals with less than or equal to 91 work loss days are reimbursed only for days beyond the 28-day threshold. 91 work loss days was decided based on the average number of weeks that states provide for personal medical leave under the paid family leave policies.[@statepa2024]
+    -   Eligible individuals with less than or equal to 91 work loss days are reimbursed only for days beyond the 28-day threshold. 91 work loss days was decided based on the average number of weeks that states provide for personal medical leave under the paid family leave policies [@statepa2024].
 
     -   Reimbursement = (work loss days−28) × (reimbursement rate / 7​)
 
